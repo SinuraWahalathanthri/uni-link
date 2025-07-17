@@ -1,4 +1,3 @@
-import { Image } from "expo-image";
 import {
   FlatList,
   Platform,
@@ -10,142 +9,142 @@ import {
   TextInput,
   View,
 } from "react-native";
+import React, { useState } from "react";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { useNavigation } from "expo-router";
+import { Image } from "expo-image";
 import { formatDistanceToNow } from "date-fns";
+import { Link, useNavigation } from "expo-router";
 
-const newsData = [
+const eventData = [
   {
     id: "1",
-    title: "University Exam Schedule Released",
-    category: "Exam",
-    description:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text...",
-    author: "Deepal Kodithuwakku",
-    department: "All Departments",
-    image: require("../../assets/images/hackthonImage.png"),
-    createdAt: "2024-07-14T08:00:00Z", // ISO string
-    readDuration: 4, // in minutes
+    title: "Hacktivate 2000",
+    organizer: "Hackathon Club",
+    date: "2024-06-16", // Format: YYYY-MM-DD
+    time: "1PM - 3PM",
+    location: "Memorial Hall 2 - 4",
+    image: require("../../assets/images/hackthonImage.png"), // Replace with your own images later
   },
-  {
-    id: "2",
-    title: "New Online Portal Launch",
-    category: "Notice",
-    description:
-      "The new student portal offers better performance and a user-friendly interface for academic updates and communication.",
-    author: "IT Department",
-    department: "All Departments",
-    image: require("../../assets/images/hackthonImage.png"),
-    createdAt: "2024-07-13T14:30:00Z",
-    readDuration: 3,
-  },
+  // Add more events...
 ];
 
-const NewsCard = ({ item }) => {
-  const navigation = useNavigation<any>();
-
-  const timeAgo = formatDistanceToNow(new Date(item.createdAt), {
-    addSuffix: true,
+const EventCard = ({ item }) => {
+  const eventDate = new Date(item.date);
+  const dayName = eventDate.toLocaleDateString("en-US", { weekday: "long" });
+  const monthDay = eventDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
   });
-  const readTime = `${item.readDuration} min read`;
 
   return (
-    <Pressable
-      onPress={() =>
-        navigation.navigate("newsDetail", { news: JSON.stringify(item) })
-      }
+    <View
       style={{
-        paddingVertical: 12,
-        paddingHorizontal: 12,
+        padding: 12,
         borderWidth: 1,
         borderColor: "#D7D7D7",
-        borderRadius: 12,
+        borderRadius: 20,
         marginTop: 13,
+        backgroundColor: "#fff",
       }}
     >
-      <View style={{ flexDirection: "row" }}>
+      <View style={{ borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
         <Image
           source={item.image}
-          style={{ width: 90, height: 90, borderRadius: 8 }}
+          style={{ width: "100%", height: 160 }}
+          contentFit="cover"
         />
-        <View style={{ marginLeft: 12, flex: 1 }}>
-          <Text
-            style={{ fontFamily: "LatoBold", fontSize: 16, lineHeight: 20 }}
-          >
-            {item.title}
+      </View>
+
+      <View style={{ marginBottom: 8, gap: 4 }}>
+        <Text
+          style={{ fontFamily: "LatoBold", fontSize: 12, color: "#875F26" }}
+        >
+          MON, JUNE 16 @ 1PM - 3PM EDT
+        </Text>
+        <Text style={{ fontFamily: "LatoBold", fontSize: 16, color: "#000" }}>
+          {item.title}
+        </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 8,
+          }}
+        >
+          <Text style={{ fontFamily: "Lato", fontSize: 14, color: "#6B6B6B" }}>
+            by {item.organizer}
           </Text>
+
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 1,
             }}
           >
-            <Text style={{ fontFamily: "LatoBold", color: "#BF272E" }}>
-              {item.category}
-            </Text>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            <MaterialIcons name="location-on" size={18} color="#6B6B6B" />
+            <Text
+              style={{
+                fontFamily: "Lato",
+                fontSize: 13,
+                color: "#6B6B6B",
+                marginLeft: 4,
+              }}
             >
-              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-                {timeAgo}
-              </Text>
-              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-                •
-              </Text>
-              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-                {readTime}
-              </Text>
-            </View>
+              {item.location}
+            </Text>
           </View>
-          <Text
-            style={{
-              fontFamily: "Lato",
-              fontSize: 14,
-              lineHeight: 18,
-              color: "#6B6B6B",
-              marginTop: 4,
-            }}
-            numberOfLines={4}
-            ellipsizeMode="tail"
-          >
-            {item.description}
-          </Text>
         </View>
       </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 6,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-            {item.author}
+      <View style={{ flexDirection: "row", gap: 12 }}>
+        <Pressable
+          style={{
+            flex: 1,
+            paddingVertical: 12,
+            backgroundColor: "#E6E5E7",
+            borderRadius: 100,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 8,
+          }}
+        >
+          <MaterialIcons name="star" size={20} color="#000000" />
+          <Text style={{ fontFamily: "LatoBold", fontSize: 14 }}>
+            Interested
           </Text>
-          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>•</Text>
-          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-            {item.department}
-          </Text>
-        </View>
-        <MaterialCommunityIcons
-          name="bookmark-outline"
-          size={24}
-          color="#3D83F5"
-        />
+        </Pressable>
+
+        <Link href={"/eventsDetails"} asChild>
+          <Pressable
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              backgroundColor: "#3D83F5",
+              borderRadius: 100,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <MaterialIcons name="calendar-month" size={20} color="#ffffff" />
+            <Text
+              style={{ fontFamily: "LatoBold", fontSize: 14, color: "#fff" }}
+            >
+              Register
+            </Text>
+          </Pressable>
+        </Link>
       </View>
-    </Pressable>
+    </View>
   );
 };
 
-export default function NewsScreen() {
-  const [emailFocused, setEmailFocused] = useState(false);
 
+const Events = () => {
+  const [emailFocused, setEmailFocused] = useState(false);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <View
@@ -195,9 +194,9 @@ export default function NewsScreen() {
             }}
           >
             <View>
-              <Text style={styles.title}>News</Text>
+              <Text style={styles.title}>Events</Text>
               <Text style={styles.subTitle}>
-                Get updates about the latest news.
+                Check out new event planned just for you.
               </Text>
             </View>
             <View
@@ -238,7 +237,7 @@ export default function NewsScreen() {
                     color: "#ffffff",
                   }}
                 >
-                  All
+                  My Groups
                 </Text>
               </View>
 
@@ -260,70 +259,7 @@ export default function NewsScreen() {
                     color: "#707275",
                   }}
                 >
-                  Exam
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Exam
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Exam
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Exam
+                  My Groups
                 </Text>
               </View>
             </ScrollView>
@@ -351,21 +287,24 @@ export default function NewsScreen() {
             </View>
           </View>
         </View>
+
         <View style={{ flex: 1 }}>
           <FlatList
-            data={newsData}
+            data={eventData}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: Platform.OS === "ios" ? 80 : 40,
             }}
-            renderItem={({ item }) => <NewsCard item={item} />}
+            renderItem={({ item }) => <EventCard item={item} />}
           />
         </View>
       </View>
     </SafeAreaView>
   );
-}
+};
+
+export default Events;
 
 const styles = StyleSheet.create({
   container: {

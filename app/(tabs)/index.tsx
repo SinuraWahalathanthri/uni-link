@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { Link } from "expo-router";
 
 const eventData = [
   {
@@ -393,54 +394,56 @@ export default function HomeScreen() {
                   </Text>
                 </Pressable>
                 {/* Column 2 */}
-                <Pressable
-                  style={{
-                    flex: 1,
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
-                    borderRadius: 16,
-                    backgroundColor: "#ffffff",
-                    borderWidth: 1,
-                    borderColor: "#CFCFCF",
-                  }}
-                >
-                  <View
+                <Link href={"/resources"} asChild>
+                  <Pressable
                     style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      flex: 1,
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 16,
+                      backgroundColor: "#ffffff",
+                      borderWidth: 1,
+                      borderColor: "#CFCFCF",
                     }}
                   >
                     <View
                       style={{
-                        width: 30,
-                        height: 30,
-                        backgroundColor: "#A357FF",
+                        flexDirection: "row",
+                        justifyContent: "space-between",
                         alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: 2,
-                        marginTop: 10,
                       }}
                     >
-                      <MaterialIcons
-                        name="menu-book"
-                        size={24}
-                        color="#ffffff"
-                      />
+                      <View
+                        style={{
+                          width: 30,
+                          height: 30,
+                          backgroundColor: "#A357FF",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: 2,
+                          marginTop: 10,
+                        }}
+                      >
+                        <MaterialIcons
+                          name="menu-book"
+                          size={24}
+                          color="#ffffff"
+                        />
+                      </View>
                     </View>
-                  </View>
-                  <Text
-                    style={{
-                      fontFamily: "Lato",
-                      fontSize: 14,
-                      lineHeight: 19,
-                      color: "#000000",
-                      marginTop: 5,
-                    }}
-                  >
-                    Resources
-                  </Text>
-                </Pressable>
+                    <Text
+                      style={{
+                        fontFamily: "Lato",
+                        fontSize: 14,
+                        lineHeight: 19,
+                        color: "#000000",
+                        marginTop: 5,
+                      }}
+                    >
+                      Resources
+                    </Text>
+                  </Pressable>
+                </Link>
               </View>
             </View>
 
