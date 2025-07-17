@@ -1,46 +1,92 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Platform, View } from 'react-native';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <Tabs
+ <View style={{ flex: 1, backgroundColor: '#fdfdfd' }}>
+     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
+        // tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
+            backgroundColor: '#fdfdfd',
             position: 'absolute',
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+            shadowOffset: { height: 0, width: 0 },
+            shadowRadius: 0,
           },
-          default: {},
+          default: {
+            backgroundColor: '#fdfdfd',
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+            shadowOffset: { height: 0, width: 0 },
+            shadowRadius: 0,
+          },
         }),
-      }}>
+        tabBarActiveTintColor: '#007aff',
+        tabBarInactiveTintColor: 'gray',
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <MaterialIcons size={28} name="home-filled" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="home-filled" size={28} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="news"
         options={{
           title: 'News',
-          tabBarIcon: ({ color }) => <MaterialIcons size={28} name="newspaper" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="newspaper" size={28} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="events"
+        options={{
+          title: 'Event',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="calendar-month" size={28} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chats"
+        options={{
+          title: 'Chats',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="chat-processing" size={28} color={color} />
+          ),
+          tabBarBadge: 3,
+          tabBarBadgeStyle: {
+            backgroundColor: 'red',
+            color: 'white',
+            fontSize: 10,
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="groups"
+        options={{
+          title: 'Groups',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="account-group" size={28} color={color} />
+          ),
         }}
       />
     </Tabs>
+ </View>
   );
 }

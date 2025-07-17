@@ -11,6 +11,8 @@ import {
 } from "react-native";
 
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import AppHeader from "@/components/main/Header";
+
 
 const eventData = [
   {
@@ -77,36 +79,7 @@ export default function HomeScreen() {
         ]}
       >
         {/* Header */}
-        <View
-          style={{
-            width: "100%",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 20,
-          }}
-        >
-          <Image
-            source={require("../../assets/images/instituteLogo.png")}
-            style={styles.image}
-          />
-
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 16,
-              marginTop: 20,
-              alignItems: "center",
-            }}
-          >
-            <MaterialCommunityIcons name="magnify" size={24} />
-            <MaterialCommunityIcons name="bell-outline" size={24} />
-
-            <Image
-              source={require("../../assets/images/profileImage.png")}
-              style={styles.profileImage}
-            />
-          </View>
-        </View>
+        <AppHeader/>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
