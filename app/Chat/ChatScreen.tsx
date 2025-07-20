@@ -12,12 +12,19 @@ import {
   ImageBackground,
   Platform,
   KeyboardAvoidingView,
+  Pressable,
 } from "react-native";
 import { Entypo, Feather, Ionicons } from "@expo/vector-icons";
 import AppHeader from "@/components/main/Header";
-import { Stack } from "expo-router";
+import { Stack, useNavigation } from "expo-router";
 
 export default function ChatScreen() {
+  const navigation = useNavigation();
+
+  const navigateToProfile = () => {
+    navigation.navigate("Lecturer/LecturerProfile");
+  };
+
   const dummyMessages = [
     {
       sender: "mentor",
@@ -45,11 +52,13 @@ export default function ChatScreen() {
       <View style={styles.header}>
         <Feather name="arrow-left" size={24} color="#333" />
 
-        <Image
+       <Pressable onPress={navigateToProfile}>
+         <Image
           source={require("../../assets/images/profileImage.png")}
           style={styles.profileImage}
         />
-        <View style={styles.profileInfo}>
+       </Pressable>
+        <Pressable style={styles.profileInfo} onPress={navigateToProfile}>
           <View style={styles.row}>
             <Text style={styles.headerText}>Dr. Anil Fernando</Text>
             <View style={styles.badge}>
@@ -59,7 +68,7 @@ export default function ChatScreen() {
           <View style={styles.row}>
             <Text style={styles.metaText}>Computer Science</Text>
           </View>
-        </View>
+        </Pressable>
 
         <Feather name="phone" size={22} color="#333" style={styles.icon} />
         <Feather
