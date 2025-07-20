@@ -12,7 +12,7 @@ import {
 
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import AppHeader from "@/components/main/Header";
-
+import AppointmentCard from "@/components/main/AppointmentCard";
 
 const eventData = [
   {
@@ -79,7 +79,7 @@ export default function HomeScreen() {
         ]}
       >
         {/* Header */}
-        <AppHeader/>
+        <AppHeader />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -104,8 +104,8 @@ export default function HomeScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "Lato",
-                  fontSize: 16,
+                  fontFamily: "LatoBold",
+                  fontSize: 18,
                   lineHeight: 20,
                   color: "#000000",
                 }}
@@ -136,6 +136,39 @@ export default function HomeScreen() {
               />
             </View>
 
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 24,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "LatoBold",
+                  fontSize: 18,
+                  lineHeight: 20,
+                  color: "#000000",
+                }}
+              >
+                Upcomming Sessions
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "Lato",
+                  fontSize: 15,
+                  lineHeight: 19,
+                  color: "#1A3C7C",
+                }}
+              >
+                See all
+              </Text>
+            </View>
+
+            <View>
+              <AppointmentCard />
+            </View>
+
             {/* Quick Access */}
             <View
               style={{
@@ -146,8 +179,8 @@ export default function HomeScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "Lato",
-                  fontSize: 16,
+                  fontFamily: "LatoBold",
+                  fontSize: 18,
                   lineHeight: 20,
                   color: "#000000",
                 }}
@@ -427,8 +460,8 @@ export default function HomeScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "Lato",
-                  fontSize: 16,
+                fontFamily: "LatoBold",
+                  fontSize: 18,
                   lineHeight: 20,
                   color: "#000000",
                 }}
