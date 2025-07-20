@@ -465,16 +465,20 @@ export default function HomeScreen() {
               >
                 Connect with lectures
               </Text>
-              <Text
-                style={{
-                  fontFamily: "Lato",
-                  fontSize: 15,
-                  lineHeight: 19,
-                  color: "#1A3C7C",
-                }}
-              >
-                View all
-              </Text>
+              <Link href={"/staffDirectory"} asChild>
+                <Pressable>
+                  <Text
+                    style={{
+                      fontFamily: "Lato",
+                      fontSize: 15,
+                      lineHeight: 19,
+                      color: "#1A3C7C",
+                    }}
+                  >
+                    View all
+                  </Text>
+                </Pressable>
+              </Link>
             </View>
 
             <View
