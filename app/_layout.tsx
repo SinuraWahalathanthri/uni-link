@@ -24,6 +24,10 @@ export default function RootLayout() {
     LatoBlackItalic: require("../assets/fonts/Lato-BlackItalic.ttf"),
     LatoThin: require("../assets/fonts/Lato-Thin.ttf"),
     LatoThinItalic: require("../assets/fonts/Lato-ThinItalic.ttf"),
+
+    Poppins:require("../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsBold:require("../assets/fonts/Poppins-Bold.ttf"),
+    PoppinsMedium:require("../assets/fonts/Poppins-Medium.ttf"),
   });
 
   if (!loaded) {
@@ -32,7 +36,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

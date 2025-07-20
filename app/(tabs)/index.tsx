@@ -11,8 +11,9 @@ import {
 } from "react-native";
 
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import AppHeader from "@/components/main/Header";
+import AppointmentCard from "@/components/main/AppointmentCard";
 import { Link } from "expo-router";
-
 const eventData = [
   {
     id: "1",
@@ -78,36 +79,7 @@ export default function HomeScreen() {
         ]}
       >
         {/* Header */}
-        <View
-          style={{
-            width: "100%",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 20,
-          }}
-        >
-          <Image
-            source={require("../../assets/images/instituteLogo.png")}
-            style={styles.image}
-          />
-
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 16,
-              marginTop: 20,
-              alignItems: "center",
-            }}
-          >
-            <MaterialCommunityIcons name="magnify" size={24} />
-            <MaterialCommunityIcons name="bell-outline" size={24} />
-
-            <Image
-              source={require("../../assets/images/profileImage.png")}
-              style={styles.profileImage}
-            />
-          </View>
-        </View>
+        <AppHeader />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -132,8 +104,8 @@ export default function HomeScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "Lato",
-                  fontSize: 16,
+                  fontFamily: "LatoBold",
+                  fontSize: 18,
                   lineHeight: 20,
                   color: "#000000",
                 }}
@@ -164,6 +136,39 @@ export default function HomeScreen() {
               />
             </View>
 
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 24,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "LatoBold",
+                  fontSize: 18,
+                  lineHeight: 20,
+                  color: "#000000",
+                }}
+              >
+                Upcomming Sessions
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "Lato",
+                  fontSize: 15,
+                  lineHeight: 19,
+                  color: "#1A3C7C",
+                }}
+              >
+                See all
+              </Text>
+            </View>
+
+            <View>
+              <AppointmentCard />
+            </View>
+
             {/* Quick Access */}
             <View
               style={{
@@ -174,8 +179,8 @@ export default function HomeScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "Lato",
-                  fontSize: 16,
+                  fontFamily: "LatoBold",
+                  fontSize: 18,
                   lineHeight: 20,
                   color: "#000000",
                 }}
@@ -457,8 +462,8 @@ export default function HomeScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "Lato",
-                  fontSize: 16,
+                fontFamily: "LatoBold",
+                  fontSize: 18,
                   lineHeight: 20,
                   color: "#000000",
                 }}

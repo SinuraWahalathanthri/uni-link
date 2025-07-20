@@ -12,140 +12,101 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
+import CommonStyles from "@/constants/CommonStyles";
 import AppHeader from "@/components/main/Header";
 import { useNavigation } from "expo-router";
-import { formatDistanceToNow } from "date-fns";
 
-const newsData = [
+
+const lectureData = [
   {
     id: "1",
-    title: "University Exam Schedule Released",
-    category: "Exam",
-    description:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text...",
-    author: "Deepal Kodithuwakku",
-    department: "All Departments",
+    name: "University Exam Schedule Released",
+    user_type: "Exam",
+    Department: "1 day ago",
+    msg: "4 min read",
+    timeAgo: "1 day ago",
+    unreadCount: 2,
+    readTime: "4 min read",
     image: require("../../assets/images/hackthonImage.png"),
-    createdAt: "2024-07-14T08:00:00Z", // ISO string
-    readDuration: 4, // in minutes
   },
-  {
+    {
     id: "2",
-    title: "New Online Portal Launch",
-    category: "Notice",
-    description:
-      "The new student portal offers better performance and a user-friendly interface for academic updates and communication.",
-    author: "IT Department",
-    department: "All Departments",
+    name: "University Exam Schedule Released",
+    user_type: "Exam",
+    Department: "1 day ago",
+    msg: "4 min read",
+    timeAgo: "1 day ago",
+    unreadCount: 0,
+    readTime: "4 min read",
     image: require("../../assets/images/hackthonImage.png"),
-    createdAt: "2024-07-13T14:30:00Z",
-    readDuration: 3,
+  },
+    {
+    id: "3",
+    name: "University Exam Schedule Released",
+    user_type: "Exam",
+    Department: "1 day ago",
+    msg: "4 min read",
+    timeAgo: "1 day ago",
+    unreadCount: 0,
+    readTime: "4 min read",
+    image: require("../../assets/images/hackthonImage.png"),
   },
 ];
 
-const NewsCard = ({ item }) => {
-  const navigation = useNavigation<any>();
-
-  const timeAgo = formatDistanceToNow(new Date(item.createdAt), {
-    addSuffix: true,
-  });
-  const readTime = `${item.readDuration} min read`;
-
-  return (
-    <Pressable
-      onPress={() =>
-        navigation.navigate("newsDetail", { news: JSON.stringify(item) })
-      }
-      style={{
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: "#D7D7D7",
-        borderRadius: 12,
-        marginTop: 13,
-      }}
-    >
-      <View style={{ flexDirection: "row" }}>
-        <Image
-          source={item.image}
-          style={{ width: 90, height: 90, borderRadius: 8 }}
-        />
-        <View style={{ marginLeft: 12, flex: 1 }}>
+const ChatCard = ({ item, onPress }) => (
+  <Pressable style={styles.card} onPress={onPress}>
+    <View style={styles.row}>
+      <View style={styles.row}>
+        <Image source={item.image} style={styles.profileImage} />
+        <View style={styles.dot2} />
+      </View>
+      <View style={styles.content}>
+        {/* Title */}
+        <View style={[styles.row, { justifyContent: "space-between" }]}>
+          <Text style={styles.cardTitle}>Dr.Sarah Johnsons</Text>
           <Text
-            style={{ fontFamily: "LatoBold", fontSize: 16, lineHeight: 20 }}
+            style={[
+              styles.metaTextLight,
+              { marginTop: 5, alignContent: "flex-end", fontSize: 12 },
+            ]}
           >
-            {item.title}
+            4:15 PM
           </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 1,
-            }}
-          >
-            <Text style={{ fontFamily: "LatoBold", color: "#BF272E" }}>
-              {item.category}
-            </Text>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-            >
-              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-                {timeAgo}
-              </Text>
-              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-                •
-              </Text>
-              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-                {readTime}
-              </Text>
-            </View>
+        </View>
+
+        {/* Meta Row */}
+        <View style={[styles.row, { justifyContent: "space-between" }]}>
+          <View style={styles.metaRow}>
+            <Text style={styles.tag}>Lecturer</Text>
+            <Text style={styles.dot}>•</Text>
+            <Text style={styles.metaText}>Computer Science</Text>
           </View>
-          <Text
-            style={{
-              fontFamily: "Lato",
-              fontSize: 14,
-              lineHeight: 18,
-              color: "#6B6B6B",
-              marginTop: 4,
-            }}
-            numberOfLines={4}
-            ellipsizeMode="tail"
-          >
-            {item.description}
-          </Text>
-        </View>
-      </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 6,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-            {item.author}
-          </Text>
-          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>•</Text>
-          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-            {item.department}
-          </Text>
+          {item.unreadCount > 0 && (
+            <View style={{ marginTop: 6, marginRight: 4 }}>
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>2</Text>
+              </View>
+            </View>
+          )}
         </View>
-        <MaterialCommunityIcons
-          name="bookmark-outline"
-          size={24}
-          color="#3D83F5"
-        />
-      </View>
-    </Pressable>
-  );
-};
 
-export default function NewsScreen() {
+        <Text numberOfLines={2} style={styles.metaTextLight}>
+          Your assignment submission is good, still needs more work to do putha.
+          Dw we can do this together. you got this!!
+        </Text>
+      </View>
+    </View>
+  </Pressable>
+);
+
+export default function ChatScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
+  const navigation = useNavigation();
+
+  const navigateToChat = () => {
+    navigation.navigate("Chat/ChatScreen");
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -167,9 +128,9 @@ export default function NewsScreen() {
             }}
           >
             <View>
-              <Text style={styles.title}>News</Text>
+              <Text style={styles.title}>Connect with Lecturers</Text>
               <Text style={styles.subTitle}>
-                Get updates about the latest news.
+                Chat and connect with your lecturers here
               </Text>
             </View>
             <View
@@ -183,7 +144,7 @@ export default function NewsScreen() {
               <MaterialIcons name="add" color={"#ffffff"} size={24} />
             </View>
           </View>
-          <View>
+          {/* <View>
             <ScrollView
               horizontal
               contentContainerStyle={{
@@ -299,13 +260,13 @@ export default function NewsScreen() {
                 </Text>
               </View>
             </ScrollView>
-          </View>
+          </View> */}
 
-          <View style={styles.inputContainer}>
+          <View style={CommonStyles.inputContainer}>
             <View
               style={[
-                styles.emailInputWrapper,
-                emailFocused && styles.focusedInput,
+                CommonStyles.emailInputWrapper,
+                emailFocused && CommonStyles.focusedInput,
               ]}
             >
               <MaterialCommunityIcons
@@ -314,8 +275,9 @@ export default function NewsScreen() {
                 color={"#777777"}
               />
               <TextInput
-                style={styles.textInput}
-                placeholder="Search announcements"
+                style={CommonStyles.textInput}
+                placeholder="Search lecturers and staff"
+                placeholderTextColor={"#777777"}
                 keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
@@ -325,13 +287,13 @@ export default function NewsScreen() {
         </View>
         <View style={{ flex: 1 }}>
           <FlatList
-            data={newsData}
+            data={lectureData}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: Platform.OS === "ios" ? 80 : 40,
             }}
-            renderItem={({ item }) => <NewsCard item={item} />}
+            renderItem={({ item }) => <ChatCard onPress={navigateToChat} item={item} />}
           />
         </View>
       </View>
@@ -340,10 +302,45 @@ export default function NewsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-    paddingHorizontal: 16,
+  unreadBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#3d83f5",
+    borderRadius: 12,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+
+  unreadText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontFamily: "LatoBold",
+    fontSize: 16,
+    lineHeight: 29,
+    fontWeight: "600",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   image: {
     width: 148,
@@ -351,16 +348,89 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: 14,
   },
-  profileImage: {
-    width: 40,
-    height: 40,
-    alignSelf: "center",
+  content: {
+    marginLeft: 12,
+    flex: 1,
   },
   title: {
     fontFamily: "LatoBold",
     fontSize: 24,
     lineHeight: 29,
     fontWeight: "600",
+  },
+  subTitle: {
+    marginTop: 6,
+    fontFamily: "Lato",
+    fontSize: 16,
+    lineHeight: 19,
+    color: "#6B6B6B",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginTop: -4,
+    marginBottom: 5,
+  },
+  tag: {
+    color: "#BF272E",
+    fontFamily: "LatoBold",
+    fontSize: 14,
+  },
+  metaText: {
+    color: "#6B6B6B",
+    fontFamily: "LatoBold",
+    fontSize: 14,
+  },
+  metaTextLight: {
+    color: "#6B6B6B",
+    fontFamily: "Lato",
+    fontSize: 14,
+    marginTop: 4,
+  },
+  dot: {
+    marginHorizontal: 6,
+    color: "#6B6B6B",
+    fontSize: 20,
+  },
+  dot2: {
+    width: 10,
+    height: 10,
+    marginHorizontal: 6,
+    backgroundColor: "#48d562",
+    borderRadius: 10,
+    position: "absolute",
+    top: 50,
+    bottom: 2,
+    right: 2,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 14,
+    alignItems: "center",
+  },
+  authorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  author: {
+    fontFamily: "LatoBold",
+    color: "#3A3A3A",
+    fontSize: 13,
+  },
+
+  ////////////
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    paddingHorizontal: 16,
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    alignSelf: "center",
+    borderRadius: 100,
   },
   subTitle: {
     marginTop: 6,
@@ -396,6 +466,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingVertical: 0,
     flex: 1,
+    color: "#000000",
   },
   focusedInput: {
     borderColor: "#3D83F5",
