@@ -1,97 +1,371 @@
-// App.js
-import React, { useEffect, useRef, useState } from "react";
-import { Text, View, Button, Platform } from "react-native";
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import React, { useState } from "react";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { formatDistanceToNow } from "date-fns";
+import { Link, useNavigation } from "expo-router";
 
-// Notification behavior when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const eventData = [
+  {
+    id: "1",
+    title: "Hacktivate 2000",
+    organizer: "Hackathon Club",
+    date: "2024-06-16", // Format: YYYY-MM-DD
+    time: "1PM - 3PM",
+    location: "Memorial Hall 2 - 4",
+    image: require("../../assets/images/hackthonImage.png"), // Replace with your own images later
+  },
+  // Add more events...
+];
 
-export default function events() {
-  const [expoPushToken, setExpoPushToken] = useState("");
-  const [notification, setNotification] = useState(false);
-  const notificationListener = useRef<Notifications.Subscription | null>(null);
-  const responseListener = useRef<Notifications.Subscription | null>(null);
-
-  useEffect(() => {
-    registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
-
-    // Listener for receiving notification
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-    });
-
-    // Listener when user taps the notification
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log("Tapped notification:", response);
-    });
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
-    };
-  }, []);
+const EventCard = ({ item }) => {
+  const eventDate = new Date(item.date);
+  const dayName = eventDate.toLocaleDateString("en-US", { weekday: "long" });
+  const monthDay = eventDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+  });
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Your Expo Push Token:</Text>
-      <Text selectable>{expoPushToken}</Text>
+    <View
+      style={{
+        padding: 12,
+        borderWidth: 1,
+        borderColor: "#D7D7D7",
+        borderRadius: 20,
+        marginTop: 13,
+        backgroundColor: "#fff",
+      }}
+    >
+      <View style={{ borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
+        <Image
+          source={item.image}
+          style={{ width: "100%", height: 160 }}
+          contentFit="cover"
+        />
+      </View>
 
-      <Button
-        title="Test Local Notification"
-        onPress={async () => {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: "📣 Test Notification",
-              body: "This is a test message from Chad 💬",
-              data: { customData: "hello" },
-            },
-            trigger: { seconds: 2 },
-          });
-        }}
-      />
+      <View style={{ marginBottom: 8, gap: 4 }}>
+        <Text
+          style={{ fontFamily: "LatoBold", fontSize: 12, color: "#875F26" }}
+        >
+          MON, JUNE 16 @ 1PM - 3PM EDT
+        </Text>
+        <Text style={{ fontFamily: "LatoBold", fontSize: 16, color: "#000" }}>
+          {item.title}
+        </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 8,
+          }}
+        >
+          <Text style={{ fontFamily: "Lato", fontSize: 14, color: "#6B6B6B" }}>
+            by {item.organizer}
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <MaterialIcons name="location-on" size={18} color="#6B6B6B" />
+            <Text
+              style={{
+                fontFamily: "Lato",
+                fontSize: 13,
+                color: "#6B6B6B",
+                marginLeft: 4,
+              }}
+            >
+              {item.location}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={{ flexDirection: "row", gap: 12 }}>
+        <Pressable
+          style={{
+            flex: 1,
+            paddingVertical: 12,
+            backgroundColor: "#E6E5E7",
+            borderRadius: 100,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 8,
+          }}
+        >
+          <MaterialIcons name="star" size={20} color="#000000" />
+          <Text style={{ fontFamily: "LatoBold", fontSize: 14 }}>
+            Interested
+          </Text>
+        </Pressable>
+
+        <Link href={"/eventsDetails"} asChild>
+          <Pressable
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              backgroundColor: "#3D83F5",
+              borderRadius: 100,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <MaterialIcons name="calendar-month" size={20} color="#ffffff" />
+            <Text
+              style={{ fontFamily: "LatoBold", fontSize: 14, color: "#fff" }}
+            >
+              Register
+            </Text>
+          </Pressable>
+        </Link>
+      </View>
     </View>
   );
-}
+};
 
-// Function to get push token
-async function registerForPushNotificationsAsync() {
-  let token;
 
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+const Events = () => {
+  const [emailFocused, setEmailFocused] = useState(false);
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: Platform.OS === "ios" ? 0 : 36 },
+        ]}
+      >
+        {/* Header */}
+        <View
+          style={{
+            width: "100%",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 20,
+          }}
+        >
+          <Image
+            source={require("../../assets/images/instituteLogo.png")}
+            style={styles.image}
+          />
 
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 16,
+              marginTop: 20,
+              alignItems: "center",
+            }}
+          >
+            <MaterialCommunityIcons name="magnify" size={24} />
+            <MaterialCommunityIcons name="bell-outline" size={24} />
 
-    if (finalStatus !== "granted") {
-      alert("Failed to get push token!");
-      return;
-    }
+            <Image
+              source={require("../../assets/images/profileImage.png")}
+              style={styles.profileImage}
+            />
+          </View>
+        </View>
+        <View>
+          {/* Title and subtitle */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <View>
+              <Text style={styles.title}>Events</Text>
+              <Text style={styles.subTitle}>
+                Check out new event planned just for you.
+              </Text>
+            </View>
+            <View
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 10,
+                backgroundColor: "#3D83F5",
+                borderRadius: 4,
+              }}
+            >
+              <MaterialIcons name="add" color={"#ffffff"} size={24} />
+            </View>
+          </View>
+          <View>
+            <ScrollView
+              horizontal
+              contentContainerStyle={{
+                flexDirection: "row",
+                gap: 8,
+                marginTop: 20,
+                alignItems: "center",
+              }}
+              showsHorizontalScrollIndicator={false}
+            >
+              <View
+                style={{
+                  paddingVertical: 5,
+                  paddingHorizontal: 24,
+                  backgroundColor: "#3D83F5",
+                  borderRadius: 100,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "Lato",
+                    fontSize: 13,
+                    lineHeight: 28,
+                    color: "#ffffff",
+                  }}
+                >
+                  My Groups
+                </Text>
+              </View>
 
-    token = (await Notifications.getExpoPushTokenAsync()).data;
-    console.log("Expo Push Token:", token);
-  } else {
-    alert("Must use a physical device");
-  }
+              <View
+                style={{
+                  paddingVertical: 5,
+                  paddingHorizontal: 24,
+                  backgroundColor: "#ffffff",
+                  borderRadius: 100,
+                  borderWidth: 1,
+                  borderColor: "#DADADA",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "Lato",
+                    fontSize: 13,
+                    lineHeight: 28,
+                    color: "#707275",
+                  }}
+                >
+                  My Groups
+                </Text>
+              </View>
+            </ScrollView>
+          </View>
 
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-    });
-  }
+          <View style={styles.inputContainer}>
+            <View
+              style={[
+                styles.emailInputWrapper,
+                emailFocused && styles.focusedInput,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="magnify"
+                size={20}
+                color={"#777777"}
+              />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Search announcements"
+                keyboardType="email-address"
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+              />
+            </View>
+          </View>
+        </View>
 
-  return token;
-}
+        <View style={{ flex: 1 }}>
+          <FlatList
+            data={eventData}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingBottom: Platform.OS === "ios" ? 80 : 40,
+            }}
+            renderItem={({ item }) => <EventCard item={item} />}
+          />
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default Events;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    paddingHorizontal: 16,
+  },
+  image: {
+    width: 148,
+    height: 65,
+    alignSelf: "center",
+    marginTop: 14,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    alignSelf: "center",
+  },
+  title: {
+    fontFamily: "LatoBold",
+    fontSize: 24,
+    lineHeight: 29,
+    fontWeight: "600",
+  },
+  subTitle: {
+    marginTop: 6,
+    fontFamily: "Lato",
+    fontSize: 16,
+    lineHeight: 19,
+    color: "#6B6B6B",
+  },
+  inputContainer: {
+    marginTop: 8,
+  },
+  label: {
+    fontFamily: "Lato",
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#505050",
+  },
+  emailInputWrapper: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#CFCFCF",
+    borderRadius: 100,
+    flexDirection: "row",
+    width: "100%",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  textInput: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: "Lato",
+    marginLeft: 8,
+    paddingVertical: 0,
+    flex: 1,
+  },
+  focusedInput: {
+    borderColor: "#3D83F5",
+    borderWidth: 1,
+  },
+});

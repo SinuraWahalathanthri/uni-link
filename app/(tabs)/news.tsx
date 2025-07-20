@@ -13,152 +13,136 @@ import {
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import AppHeader from "@/components/main/Header";
-
+import { useNavigation } from "expo-router";
+import { formatDistanceToNow } from "date-fns";
 
 const newsData = [
   {
     id: "1",
     title: "University Exam Schedule Released",
     category: "Exam",
-    timeAgo: "1 day ago",
-    readTime: "4 min read",
     description:
       "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text...",
     author: "Deepal Kodithuwakku",
     department: "All Departments",
     image: require("../../assets/images/hackthonImage.png"),
+    createdAt: "2024-07-14T08:00:00Z", // ISO string
+    readDuration: 4, // in minutes
   },
   {
     id: "2",
     title: "New Online Portal Launch",
     category: "Notice",
-    timeAgo: "2 days ago",
-    readTime: "3 min read",
     description:
       "The new student portal offers better performance and a user-friendly interface for academic updates and communication.",
     author: "IT Department",
     department: "All Departments",
     image: require("../../assets/images/hackthonImage.png"),
+    createdAt: "2024-07-13T14:30:00Z",
+    readDuration: 3,
   },
 ];
 
-const NewsCard = ({ item }) => (
-  <Pressable
-    style={{
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderWidth: 1,
-      borderColor: "#D7D7D7",
-      borderRadius: 12,
-      marginTop: 13,
-    }}
-  >
-    <View style={{ flexDirection: "row" }}>
-      <Image
-        source={item.image}
-        style={{ width: 90, height: 90, borderRadius: 8 }}
-      />
-      <View style={{ marginLeft: 12, flex: 1 }}>
-        <Text
-          style={{
-            fontFamily: "LatoBold",
-            fontSize: 16,
-            lineHeight: 20,
-          }}
-        >
-          {item.title}
-        </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: 1,
-          }}
-        >
-          <Text style={{ fontFamily: "LatoBold", color: "#BF272E" }}>
-            {item.category}
+const NewsCard = ({ item }) => {
+  const navigation = useNavigation<any>();
+
+  const timeAgo = formatDistanceToNow(new Date(item.createdAt), {
+    addSuffix: true,
+  });
+  const readTime = `${item.readDuration} min read`;
+
+  return (
+    <Pressable
+      onPress={() =>
+        navigation.navigate("newsDetail", { news: JSON.stringify(item) })
+      }
+      style={{
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: "#D7D7D7",
+        borderRadius: 12,
+        marginTop: 13,
+      }}
+    >
+      <View style={{ flexDirection: "row" }}>
+        <Image
+          source={item.image}
+          style={{ width: 90, height: 90, borderRadius: 8 }}
+        />
+        <View style={{ marginLeft: 12, flex: 1 }}>
+          <Text
+            style={{ fontFamily: "LatoBold", fontSize: 16, lineHeight: 20 }}
+          >
+            {item.title}
           </Text>
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              gap: 8,
+              justifyContent: "space-between",
+              marginTop: 1,
             }}
           >
-            <Text
-              style={{
-                fontFamily: "LatoBold",
-                color: "#434343",
-              }}
-            >
-              {item.timeAgo}
+            <Text style={{ fontFamily: "LatoBold", color: "#BF272E" }}>
+              {item.category}
             </Text>
-            <Text
-              style={{
-                fontFamily: "LatoBold",
-                color: "#434343",
-              }}
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
-              •
-            </Text>
-            <Text
-              style={{
-                fontFamily: "LatoBold",
-                color: "#434343",
-              }}
-            >
-              {item.readTime}
-            </Text>
+              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
+                {timeAgo}
+              </Text>
+              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
+                •
+              </Text>
+              <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
+                {readTime}
+              </Text>
+            </View>
           </View>
+          <Text
+            style={{
+              fontFamily: "Lato",
+              fontSize: 14,
+              lineHeight: 18,
+              color: "#6B6B6B",
+              marginTop: 4,
+            }}
+            numberOfLines={4}
+            ellipsizeMode="tail"
+          >
+            {item.description}
+          </Text>
         </View>
-        <Text
-          style={{
-            fontFamily: "Lato",
-            fontSize: 14,
-            lineHeight: 18,
-            color: "#6B6B6B",
-            marginTop: 4,
-          }}
-          numberOfLines={4}
-          ellipsizeMode="tail"
-        >
-          {item.description}
-        </Text>
       </View>
-    </View>
 
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginTop: 6,
-      }}
-    >
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 8,
+          justifyContent: "space-between",
+          marginTop: 6,
         }}
       >
-        <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-          {item.author}
-        </Text>
-        <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>•</Text>
-        <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
-          {item.department}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
+            {item.author}
+          </Text>
+          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>•</Text>
+          <Text style={{ fontFamily: "LatoBold", color: "#434343" }}>
+            {item.department}
+          </Text>
+        </View>
+        <MaterialCommunityIcons
+          name="bookmark-outline"
+          size={24}
+          color="#3D83F5"
+        />
       </View>
-      <MaterialCommunityIcons
-        name="bookmark-outline"
-        size={24}
-        color="#3D83F5"
-      />
-    </View>
-  </Pressable>
-);
+    </Pressable>
+  );
+};
 
 export default function NewsScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
