@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   name: {
     color: "#fff",
     fontWeight: "600",
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: "Poppins",
   },
   role: {
