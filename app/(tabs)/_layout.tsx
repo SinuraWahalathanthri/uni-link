@@ -67,7 +67,7 @@ export default function TabLayout() {
         options={{
           title: 'Chats',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="chat-processing" size={28} color={color} />
+            <MaterialIcons name="chat" size={28} color={color} />
           ),
           tabBarBadge: 3,
           tabBarBadgeStyle: {
@@ -86,12 +86,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="events"
-        options={{
-          title: 'Events',
-          tabBarIcon: ({ color }) => <MaterialIcons size={28} name="calendar-month" color={color} />,
-        }}/>
     </Tabs>
  </View>
   );

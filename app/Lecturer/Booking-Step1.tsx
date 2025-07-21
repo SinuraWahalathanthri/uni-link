@@ -19,18 +19,16 @@ import CommonStyles from "@/constants/CommonStyles";
 export default function Step1() {
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      ></KeyboardAvoidingView>
-
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-        <Text style={styles.headerTitle}>Request For Consultation</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <Stack.Screen
+        options={{
+          title: "Request Consultation",
+          headerTitleStyle: { color: "#000000", fontFamily: "LatoBold" },
+          headerShadowVisible: false,
+          headerTintColor: "#000000",
+          headerTitleAlign: "center",
+        }}
+      />
       <ScrollView>
-
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >

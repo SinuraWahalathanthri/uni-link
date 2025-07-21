@@ -14,21 +14,24 @@ import { Ionicons, Entypo, Feather } from "@expo/vector-icons";
 import { Stack, useNavigation } from "expo-router";
 
 export default function ProfessorProfileScreen() {
+  const navigation = useNavigation();
 
-    const navigation = useNavigation();
-
-    const navigateToConsult = () =>{
-        navigation.navigate("Lecturer/BookingProcess");
-    }
+  const navigateToConsult = () => {
+    navigation.navigate("Lecturer/BookingProcess");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-        <Text style={styles.headerTitle}>Prof. Kamal Ashoka</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <Stack.Screen
+        options={{
+          title: "Prof.Kamal Ashoka",
+          headerTitleStyle: { color: "#000000", fontFamily: "LatoBold" },
+          headerShadowVisible: false,
+          headerTintColor: "#000000",
+          headerTitleAlign: "center",
+        }}
+      />
+
       <ScrollView>
         {/* <View style={styles.header}>
           <Ionicons name="arrow-back" size={24} color="black" />

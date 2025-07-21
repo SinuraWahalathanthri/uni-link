@@ -12,6 +12,7 @@ import React, { useState } from "react";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import StaffList from "@/components/StaffList";
+import CommonStyles from "@/constants/CommonStyles";
 
 const StaffDirectory = () => {
   const [emailFocused, setEmailFocused] = useState(false);
@@ -51,11 +52,11 @@ const StaffDirectory = () => {
             </View>
           </View>
 
-          <View style={styles.inputContainer}>
+          <View style={CommonStyles.inputContainer}>
             <View
               style={[
-                styles.emailInputWrapper,
-                emailFocused && styles.focusedInput,
+                CommonStyles.searchInputWrapper,
+                emailFocused && CommonStyles.focusedInput,
               ]}
             >
               <MaterialCommunityIcons
@@ -64,7 +65,7 @@ const StaffDirectory = () => {
                 color={"#777777"}
               />
               <TextInput
-                style={styles.textInput}
+                style={CommonStyles.textInput}
                 placeholder="Search staff by name, department, or designation"
                 keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#505050",
   },
-  emailInputWrapper: {
+  searchInputWrapper: {
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderWidth: 1,

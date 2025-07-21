@@ -59,7 +59,7 @@ const lectureData = [
   },
 ];
 
-const GroupCard = ({ item,onPress }) => (
+const GroupCard = ({ item, onPress }) => (
   <Pressable style={styles.card} onPress={onPress}>
     <View style={styles.row}>
       <View style={styles.row}>
@@ -114,7 +114,7 @@ const GroupCard = ({ item,onPress }) => (
   </Pressable>
 );
 
-const DiscoverCard = ({ item,onPress }) => (
+const DiscoverCard = ({ item, onPress }) => (
   <Pressable style={styles.card} onPress={onPress}>
     <View style={styles.row}>
       <View style={styles.row}>
@@ -261,35 +261,43 @@ export default function GroupsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ marginTop: -16 }} />
-
         <View style={CommonStyles.inputContainer}>
           <View
             style={[
-              CommonStyles.emailInputWrapper,
+              CommonStyles.searchInputWrapper,
               emailFocused && CommonStyles.focusedInput,
             ]}
           >
-            <MaterialCommunityIcons name="magnify" size={20} color={"#777"} />
+            <MaterialCommunityIcons
+              name="magnify"
+              size={20}
+              color={"#777777"}
+            />
             <TextInput
               style={CommonStyles.textInput}
-              placeholder="Search groups and communities"
-              placeholderTextColor="#777"
+              placeholder="Search staff by name, department, or designation"
+              keyboardType="email-address"
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
             />
           </View>
         </View>
+
         <View style={{ flex: 1 }}>
           <FlatList
             data={selectedData}
-           
+            ItemSeparatorComponent={() => (
+              <View style={{ height: 1, backgroundColor: "#e5e5e5" }} />
+            )}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: Platform.OS === "ios" ? 80 : 40,
+              marginTop: 16,
             }}
-            renderItem={({ item }) => React.createElement(renderCard, { item, onPress: navigateToChat })}
+            renderItem={({ item }) =>
+              React.createElement(renderCard, { item, onPress: navigateToChat })
+            }
           />
         </View>
       </View>
@@ -314,7 +322,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     borderRadius: 8,
     padding: 4,
-    marginVertical: 10,
+    marginTop: 10,
   },
   tab: {
     flex: 1,
@@ -358,12 +366,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 14,
-    marginTop: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
   },
   cardTitle: {
     fontFamily: "LatoBold",
@@ -470,45 +472,5 @@ const styles = StyleSheet.create({
     height: 60,
     alignSelf: "center",
     borderRadius: 100,
-  },
-  subTitle: {
-    marginTop: 6,
-    fontFamily: "Lato",
-    fontSize: 16,
-    lineHeight: 19,
-    color: "#6B6B6B",
-  },
-  inputContainer: {
-    marginTop: 8,
-  },
-  label: {
-    fontFamily: "Lato",
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#505050",
-  },
-  emailInputWrapper: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#CFCFCF",
-    borderRadius: 100,
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  textInput: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "Lato",
-    marginLeft: 8,
-    paddingVertical: 0,
-    flex: 1,
-    color: "#000000",
-  },
-  focusedInput: {
-    borderColor: "#3D83F5",
-    borderWidth: 1,
   },
 });

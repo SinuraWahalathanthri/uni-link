@@ -15,6 +15,7 @@ import { useState } from "react";
 import AppHeader from "@/components/main/Header";
 import { useNavigation } from "expo-router";
 import { formatDistanceToNow } from "date-fns";
+import CommonStyles from "@/constants/CommonStyles";
 
 const newsData = [
   {
@@ -301,11 +302,11 @@ export default function NewsScreen() {
             </ScrollView>
           </View>
 
-          <View style={styles.inputContainer}>
+          <View style={CommonStyles.inputContainer}>
             <View
               style={[
-                styles.emailInputWrapper,
-                emailFocused && styles.focusedInput,
+                CommonStyles.searchInputWrapper,
+                emailFocused && CommonStyles.focusedInput,
               ]}
             >
               <MaterialCommunityIcons
@@ -314,7 +315,7 @@ export default function NewsScreen() {
                 color={"#777777"}
               />
               <TextInput
-                style={styles.textInput}
+                style={CommonStyles.textInput}
                 placeholder="Search announcements"
                 keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}

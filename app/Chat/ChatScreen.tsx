@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { Entypo, Feather, Ionicons } from "@expo/vector-icons";
 import AppHeader from "@/components/main/Header";
-import { Stack, useNavigation } from "expo-router";
+import { Link, Stack, useNavigation } from "expo-router";
 
 export default function ChatScreen() {
   const navigation = useNavigation();
@@ -50,14 +50,16 @@ export default function ChatScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <Feather name="arrow-left" size={24} color="#333" />
+        <Pressable onPress={() => navigation.goBack()}>
+          <Feather name="arrow-left" size={24} color="#333" />
+        </Pressable>
 
-       <Pressable onPress={navigateToProfile}>
-         <Image
-          source={require("../../assets/images/profileImage.png")}
-          style={styles.profileImage}
-        />
-       </Pressable>
+        <Pressable onPress={navigateToProfile}>
+          <Image
+            source={require("../../assets/images/profileImage.png")}
+            style={styles.profileImage}
+          />
+        </Pressable>
         <Pressable style={styles.profileInfo} onPress={navigateToProfile}>
           <View style={styles.row}>
             <Text style={styles.headerText}>Dr. Anil Fernando</Text>

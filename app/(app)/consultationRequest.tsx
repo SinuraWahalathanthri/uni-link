@@ -11,10 +11,10 @@ import {
 import React, { useState } from "react";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
-import ResourcesList from "../../components/ResourceList";
 import CommonStyles from "@/constants/CommonStyles";
+import ConsultationReqList from "@/components/ConsultationReqList";
 
-const ResourcesScreen = () => {
+const ConsultationRequest = () => {
   const [emailFocused, setEmailFocused] = useState(false);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -37,8 +37,10 @@ const ResourcesScreen = () => {
             }}
           >
             <View>
-              <Text style={styles.title}>Resources</Text>
-              <Text style={styles.subTitle}>35 resources available</Text>
+              <Text style={styles.title}>Consultation Requests</Text>
+              <Text style={styles.subTitle}>
+                View All Consultation Requests from Students
+              </Text>
             </View>
             <View
               style={{
@@ -66,7 +68,7 @@ const ResourcesScreen = () => {
               />
               <TextInput
                 style={CommonStyles.textInput}
-                placeholder="Search announcements"
+                placeholder="Search requests by student name or ID"
                 keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
@@ -101,7 +103,7 @@ const ResourcesScreen = () => {
                     color: "#ffffff",
                   }}
                 >
-                  All
+                  All (4)
                 </Text>
               </View>
 
@@ -123,82 +125,7 @@ const ResourcesScreen = () => {
                     color: "#707275",
                   }}
                 >
-                  DBMS
-                </Text>
-              </View>
-            </ScrollView>
-          </View>
-          <View>
-            <ScrollView
-              horizontal
-              contentContainerStyle={{
-                flexDirection: "row",
-                gap: 8,
-                marginTop: 5,
-                alignItems: "center",
-              }}
-              showsHorizontalScrollIndicator={false}
-            >
-              <View
-                style={{
-                  paddingVertical: 2,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#8758F5",
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#ffffff",
-                  }}
-                >
-                  All
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  paddingVertical: 2,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  DBMS
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 2,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  DBMS
+                  Pending
                 </Text>
               </View>
             </ScrollView>
@@ -211,17 +138,16 @@ const ResourcesScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20, gap: 16 }}
         >
-          <ResourcesList />
-          <ResourcesList />
-          <ResourcesList />
-          <ResourcesList />
+          <ConsultationReqList />
+          <ConsultationReqList />
+          <ConsultationReqList />
         </ScrollView>
       </View>
     </SafeAreaView>
   );
 };
 
-export default ResourcesScreen;
+export default ConsultationRequest;
 
 const styles = StyleSheet.create({
   container: {

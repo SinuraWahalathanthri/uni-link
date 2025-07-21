@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useNavigation } from "expo-router";
 
 export default function GroupDetailScreen() {
-const navigation = useNavigation();
+  const navigation = useNavigation();
 
   const navigateToChat = () => {
     navigation.navigate("Groups/GroupScreen");
@@ -20,7 +20,15 @@ const navigation = useNavigation();
   return (
     <View style={styles.container}>
       <ScrollView style={{ flex: 1 }}>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen
+          options={{
+            title: "",
+            headerTitleStyle: { color: "#ffffff" },
+            headerShadowVisible: false,
+            headerTransparent: true,
+            headerTintColor: "#ffffff",
+          }}
+        />
         <Image
           source={require("../../assets/images/main/cover.png")}
           style={styles.bannerImage}
@@ -116,8 +124,8 @@ const navigation = useNavigation();
         </View>
       </ScrollView>
       <View style={{ padding: 16, marginBottom: 20 }}>
-        <TouchableOpacity style={styles.joinButton} onPress={navigateToChat} >
-          <Ionicons name="person-add" size={20} color="white"  />
+        <TouchableOpacity style={styles.joinButton} onPress={navigateToChat}>
+          <Ionicons name="person-add" size={20} color="white" />
           <Text style={styles.joinButtonText}>Join</Text>
         </TouchableOpacity>
       </View>

@@ -14,6 +14,7 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { formatDistanceToNow } from "date-fns";
 import { Link, useNavigation } from "expo-router";
+import CommonStyles from "@/constants/CommonStyles";
 
 const eventData = [
   {
@@ -265,11 +266,11 @@ const Events = () => {
             </ScrollView>
           </View>
 
-          <View style={styles.inputContainer}>
+          <View style={CommonStyles.inputContainer}>
             <View
               style={[
-                styles.emailInputWrapper,
-                emailFocused && styles.focusedInput,
+                CommonStyles.searchInputWrapper,
+                emailFocused && CommonStyles.focusedInput,
               ]}
             >
               <MaterialCommunityIcons
@@ -278,7 +279,7 @@ const Events = () => {
                 color={"#777777"}
               />
               <TextInput
-                style={styles.textInput}
+                style={CommonStyles.textInput}
                 placeholder="Search announcements"
                 keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}
@@ -335,37 +336,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     color: "#6B6B6B",
-  },
-  inputContainer: {
-    marginTop: 8,
-  },
-  label: {
-    fontFamily: "Lato",
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#505050",
-  },
-  emailInputWrapper: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#CFCFCF",
-    borderRadius: 100,
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  textInput: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "Lato",
-    marginLeft: 8,
-    paddingVertical: 0,
-    flex: 1,
-  },
-  focusedInput: {
-    borderColor: "#3D83F5",
-    borderWidth: 1,
   },
 });

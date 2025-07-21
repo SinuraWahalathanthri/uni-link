@@ -2,7 +2,12 @@ import React from "react";
 import { Image, View, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-export default function AppHeader() {
+export default function AppHeader({ type = "student" }) {
+  const logo =
+    type === "lecture"
+      ? require("../../assets/images/instituteLogoBlue.png") // 🔁 Lecture logo
+      : require("../../assets/images/instituteLogo.png"); // 🧑‍🎓 Student logo (default)
+
   return (
     <View
       style={{
@@ -12,10 +17,7 @@ export default function AppHeader() {
         marginBottom: 20,
       }}
     >
-      <Image
-        source={require("../../assets/images/instituteLogo.png")}
-        style={styles.image}
-      />
+      <Image source={logo} style={styles.image} />
 
       <View
         style={{
@@ -25,8 +27,16 @@ export default function AppHeader() {
           alignItems: "center",
         }}
       >
-        <MaterialCommunityIcons name="magnify" size={24} />
-        <MaterialCommunityIcons name="bell-outline" size={24} />
+        <MaterialCommunityIcons
+          name={type === "lecture" ? "magnify" : "magnify"}
+          size={24}
+          color={type === "lecture" ? "#FFFFFF" : "#000000"}
+        />
+        <MaterialCommunityIcons
+          name="bell-outline"
+          size={24}
+          color={type === "lecture" ? "#FFFFFF" : "#000000"}
+        />
 
         <Image
           source={require("../../assets/images/profileImage.png")}

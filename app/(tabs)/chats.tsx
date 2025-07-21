@@ -16,7 +16,6 @@ import CommonStyles from "@/constants/CommonStyles";
 import AppHeader from "@/components/main/Header";
 import { useNavigation } from "expo-router";
 
-
 const lectureData = [
   {
     id: "1",
@@ -29,7 +28,7 @@ const lectureData = [
     readTime: "4 min read",
     image: require("../../assets/images/hackthonImage.png"),
   },
-    {
+  {
     id: "2",
     name: "University Exam Schedule Released",
     user_type: "Exam",
@@ -40,7 +39,7 @@ const lectureData = [
     readTime: "4 min read",
     image: require("../../assets/images/hackthonImage.png"),
   },
-    {
+  {
     id: "3",
     name: "University Exam Schedule Released",
     user_type: "Exam",
@@ -144,129 +143,11 @@ export default function ChatScreen() {
               <MaterialIcons name="add" color={"#ffffff"} size={24} />
             </View>
           </View>
-          {/* <View>
-            <ScrollView
-              horizontal
-              contentContainerStyle={{
-                flexDirection: "row",
-                gap: 8,
-                marginTop: 20,
-                alignItems: "center",
-              }}
-              showsHorizontalScrollIndicator={false}
-            >
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#3D83F5",
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#ffffff",
-                  }}
-                >
-                  All
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Exam
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Exam
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Exam
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Exam
-                </Text>
-              </View>
-            </ScrollView>
-          </View> */}
-
-          <View style={CommonStyles.inputContainer}>
+          <View style={styles.inputContainer}>
             <View
               style={[
-                CommonStyles.emailInputWrapper,
-                emailFocused && CommonStyles.focusedInput,
+                styles.searchInputWrapper,
+                emailFocused && styles.focusedInput,
               ]}
             >
               <MaterialCommunityIcons
@@ -275,9 +156,8 @@ export default function ChatScreen() {
                 color={"#777777"}
               />
               <TextInput
-                style={CommonStyles.textInput}
-                placeholder="Search lecturers and staff"
-                placeholderTextColor={"#777777"}
+                style={styles.textInput}
+                placeholder="Search staff by name, department, or designation"
                 keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
@@ -290,10 +170,16 @@ export default function ChatScreen() {
             data={lectureData}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => (
+              <View style={{ height: 1, backgroundColor: "#e5e5e5" }} />
+            )}
             contentContainerStyle={{
               paddingBottom: Platform.OS === "ios" ? 80 : 40,
+              marginTop: 16,
             }}
-            renderItem={({ item }) => <ChatCard onPress={navigateToChat} item={item} />}
+            renderItem={({ item }) => (
+              <ChatCard onPress={navigateToChat} item={item} />
+            )}
           />
         </View>
       </View>
@@ -325,12 +211,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 14,
-    marginTop: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
   },
   cardTitle: {
     fontFamily: "LatoBold",
@@ -432,13 +312,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     borderRadius: 100,
   },
-  subTitle: {
-    marginTop: 6,
-    fontFamily: "Lato",
-    fontSize: 16,
-    lineHeight: 19,
-    color: "#6B6B6B",
-  },
   inputContainer: {
     marginTop: 8,
   },
@@ -448,16 +321,15 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#505050",
   },
-  emailInputWrapper: {
+  searchInputWrapper: {
     paddingHorizontal: 15,
     paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#CFCFCF",
-    borderRadius: 100,
+    borderRadius: 12,
     flexDirection: "row",
     width: "100%",
     alignItems: "center",
     marginTop: 10,
+    backgroundColor: "#f3f4f6",
   },
   textInput: {
     fontSize: 14,
@@ -466,7 +338,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingVertical: 0,
     flex: 1,
-    color: "#000000",
   },
   focusedInput: {
     borderColor: "#3D83F5",
