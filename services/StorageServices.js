@@ -41,3 +41,25 @@ export const getLecturer = async (id) => {
     return null;
   }
 }
+
+export const getEvent = async (id) => {
+  try {
+    const docRef = doc(db, "events", id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) { 
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      console.warn("No matching Mentor found");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching mentor:", error);
+    return null;
+  }
+}
+
+// export const getEvents = async () => {
+//   const querySnapshot = await getDocs(collection(db, "events"));
+//   return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+// };

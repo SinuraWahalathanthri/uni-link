@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,115 +9,158 @@ import {
   TouchableOpacity,
   Platform,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, Entypo, Feather } from "@expo/vector-icons";
 import { Stack, useNavigation } from "expo-router";
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { getLecturer } from "@/services/StorageServices";
 
-export default function ProfessorProfileScreen() {
+type LectureItem = {
+  id: string;
+  name: string;
+  designation: string;
+  profileImage: string;
+  biography: string;
+  department: string;
+  email: string;
+  faculty: string;
+  google_meet_link: string;
+  linkedSubjects: string[];
+  office_hours: {
+    day: string[];
+    from: string;
+    to: string;
+    mode: string;
+  }[];
+  office_location: string;
+};
 
-    const navigation = useNavigation();
+const ProfessorProfileScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { lecturerId } = route.params as { lecturerId: string };
 
-    const navigateToConsult = () =>{
-        navigation.navigate("Lecturer/BookingProcess");
-    }
+  const [lecturerData, setLecturerData] = useState<LectureItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLecturer = async () => {
+      try {
+        const data = await getLecturer(lecturerId);
+        setLecturerData(data);
+      } catch (error) {
+        console.error("Failed to fetch lecturer:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLecturer();
+  }, [lecturerId]);
+
+  const navigateToConsult = () => {
+    navigation.navigate("Lecturer/BookingProcess", { lecturerId });
+  };
+
+  if (loading) {
+    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+  }
+
+  if (!lecturerData) {
+    return <Text>Lecturer not found.</Text>;
+  }
+
+  const navigateToChat = (lecturerId: string) => {
+    navigation.navigate("Chat/ChatScreen", { lecturerId });
+  };
+
 
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
+
+     
       <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-        <Text style={styles.headerTitle}>Prof. Kamal Ashoka</Text>
+        <Ionicons name="arrow-back" size={24} color="black" onPress={() => navigation.goBack()} />
+        <Text style={styles.headerTitle}>{lecturerData.name}</Text>
         <View style={{ width: 24 }} />
       </View>
-      <ScrollView>
-        {/* <View style={styles.header}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-          <Text style={styles.headerTitle}>Prof. Kamal Ashoka</Text>
-          <View style={{ width: 24 }} />
-        </View> */}
 
+      <ScrollView style={{ flex: 1 }}>
         <View>
           <Image
             source={require("../../assets/images/main/cover.png")}
             style={styles.coverImage}
           />
           <Image
-            source={require("../../assets/images/main/lecturer-1.png")}
+            source={
+              lecturerData.profileImage === "no-image"
+                ? require("../../assets/images/main/lecturer-1.png")
+                : { uri: lecturerData.profileImage }
+            }
             style={styles.profileImage}
           />
         </View>
 
         <View style={styles.profileContainer}>
-          <Text style={styles.name}>Prof. Kamal Ashoka</Text>
-          <Text style={styles.title}>Senior lecture at Java Institute</Text>
-          <Text style={styles.department}>
-            Department of Computing & Information Systems
-          </Text>
-          <Text style={styles.faculty}>Faculty of Applied Sciences</Text>
+          <Text style={styles.name}>{lecturerData.name}</Text>
+          <Text style={styles.title}>{lecturerData.designation}</Text>
+          <Text style={styles.department}>{lecturerData.department}</Text>
+          <Text style={styles.faculty}>{lecturerData.faculty}</Text>
 
-          {/* Connections */}
           <View style={styles.connectionRow}>
             <Text style={styles.linkText}>147+ connections</Text>
             <Text style={styles.mutualText}>Mutual Connections</Text>
           </View>
 
-          {/* Buttons */}
           <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.connectBtn}>
               <Text style={styles.connectText}>Connect</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.chatBtn}>
+            <TouchableOpacity style={styles.chatBtn} onPress={() => navigateToChat(lecturerId)}>
               <Text style={styles.chatText}>Start Chat</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Office Hours */}
+      
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Office hours</Text>
-          <Text style={styles.sectionContent}>
-            Monday & Wednesday: 10:00 AM – 12:00 PM
-          </Text>
-          <Text style={styles.sectionContent}>Friday: 2:00 PM – 4:00 PM</Text>
+          <Text style={styles.sectionTitle}>Office Hours</Text>
+          {lecturerData.office_hours?.map((slot, index) => (
+            <View key={index}>
+              <Text style={styles.sectionContent}>
+                {slot.day.join(" & ")}: {slot.from} – {slot.to} ({slot.mode})
+              </Text>
+            </View>
+          ))}
           <View style={styles.locationRow}>
             <Entypo name="location-pin" size={16} color="red" />
-            <Text style={styles.sectionContent}>
-              Room A-302, Computing Building
-            </Text>
+            <Text style={styles.sectionContent}>{lecturerData.office_location}</Text>
           </View>
         </View>
-
-        {/* Courses */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Courses and Subjects Taught</Text>
-          <Text style={styles.sectionContent}>
-            • CSC2032 - Data Structures & Algorithm
-          </Text>
-          <Text style={styles.sectionContent}>
-            • CSC2032 - Data Structures & Algorithm
-          </Text>
-          <Text style={styles.sectionContent}>
-            • CSC2032 - Data Structures & Algorithm
-          </Text>
+          {lecturerData.linkedSubjects?.map((subject, index) => (
+            <Text key={index} style={styles.sectionContent}>
+              • {subject}
+            </Text>
+          ))}
         </View>
-
-        {/* Bio */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Biography / About</Text>
-          <Text style={styles.sectionContent}>
-            "I’ve been teaching computer science for over 12 years, with a
-            passion for algorithms and helping students grow..."
-          </Text>
+          <Text style={styles.sectionContent}>{lecturerData.biography}</Text>
         </View>
-
-        {/* Consultation Button */}
       </ScrollView>
-      <TouchableOpacity style={styles.consultBtn} onPress={navigateToConsult}>
-        <Text style={styles.consultText}>Request Consultation</Text>
-      </TouchableOpacity>
+      <View style={{ paddingBottom: Platform.OS === "android" ? 50 : 20 }}>
+        <TouchableOpacity style={styles.consultBtn} onPress={navigateToConsult}>
+          <Text style={styles.consultText}>Request Consultation</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
-}
+};
+
 
 const styles = StyleSheet.create({
   container: {
@@ -253,9 +296,12 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     alignItems: "center",
     fontFamily: "LatoBold",
+    
   },
   consultText: {
     color: "#fff",
     fontWeight: "bold",
   },
 });
+
+export default ProfessorProfileScreen;

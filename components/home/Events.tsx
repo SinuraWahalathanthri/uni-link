@@ -1,5 +1,19 @@
+import { db } from "@/services/FirebaseConfig";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
+import { format } from "date-fns";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "expo-router";
+import {
+  addDoc,
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  Timestamp,
+} from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -7,37 +21,110 @@ import {
   Text,
   View,
   StyleSheet,
+  Alert,
 } from "react-native";
 
-function Events() {
-  const eventData = [
-    {
-      id: "1",
-      date: "Sat, April 22",
-      title: "Hacktivate 2000",
-      image: require("../../assets/images/hackthonImage.png"),
-    },
-    {
-      id: "2",
-      date: "Sun, May 14",
-      title: "CodeX Summit",
-      image: require("../../assets/images/hackthonImage.png"),
-    },
-  ];
+type EventItem = {
+  id: string;
+  date: string;
+  title: string;
+  imageUrl: any;
+};
 
-  const EventCard = ({ item }) => (
-    <Pressable style={styles.card}>
-      <Image source={item.image} style={styles.upcomingImage} />
-      <Pressable style={styles.overlay} />
-      <Pressable style={styles.heart}>
-        <MaterialCommunityIcons name="heart" color="#ffffff" size={16} />
+function Events() {
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const navigation = useNavigation<any>();
+
+  //   const addEvent = async () => {
+  //   try {
+  //     await addDoc(collection(db, "events"), {
+  //       createdAt: Timestamp.fromDate(new Date()),
+  //       created_by: "353q957587q395",
+  //       date: Timestamp.fromDate(new Date()),
+  //       description:
+  //         "An intensive workshop on Artificial Intelligence. This Bootcamp will give students to connect with professionals in the Ai Industry and help them refurnish there skills in Machine Learning and Artificial Intelligence.",
+  //       hostedBy: "Department of Computing",
+  //       imageUrl:
+  //         "https://www.zriadventures.com/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fdjhua1jv9%2Fimage%2Fupload%2Fv1707574917%2FIMG_20230901_125113_bc7ec07ead.webp&w=3840&q=75",
+  //       location: "Auditorium A",
+  //       status: "Active",
+  //       time: "10:00 AM",
+  //       title: "Nagrak Expedition Hike'25",
+  //     });
+
+  //     console.log("Event added successfully!");
+  //   } catch (error) {
+  //     console.error("Error adding event:", error);
+  //   }
+  // };
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      query(collection(db, "events"), orderBy("createdAt", "desc")),
+      (snapshot) => {
+        const eventList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as EventItem[];
+
+        setEvents(eventList);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const navigateToEventDetails = (item: EventItem) => {
+    navigation.navigate("Events/EventDetails", {
+      eventId: item.id,
+    });
+  };
+
+  const EventCard = ({ item }: { item: EventItem }) => {
+
+    const isNew = (createdAt: Timestamp) => {
+      const now = new Date();
+      const createdDate = createdAt.toDate();
+      const diffInMs = now.getTime() - createdDate.getTime();
+      const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+      return diffInDays <= 3;
+    };
+    const showNewBadge = item.createdAt && isNew(item.createdAt);
+
+    return (
+      <Pressable
+        style={styles.card}
+        onPress={() => navigateToEventDetails(item)}
+      >
+        <Image source={{ uri: item.imageUrl }} style={styles.upcomingImage} />
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.8)"]}
+          style={styles.gradientOverlay}
+        >
+          {showNewBadge && (
+            <View style={[styles.badge, { backgroundColor: "red" }]}>
+              <Text style={styles.badgeText}>New</Text>
+            </View>
+          )}
+          <View style={styles.textContainer}>
+            <Text style={styles.dateText}>{item.title}</Text>
+            <Text numberOfLines={2} style={styles.titleText}>
+              <Text numberOfLines={2} style={styles.titleText}>
+                {item.date.toDate().toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </Text>
+            </Text>
+          </View>
+        </LinearGradient>
       </Pressable>
-      <View style={styles.textContainer}>
-        <Text style={styles.dateText}>{item.date}</Text>
-        <Text style={styles.titleText}>{item.title}</Text>
-      </View>
-    </Pressable>
-  );
+    );
+  };
 
   return (
     <>
@@ -72,7 +159,7 @@ function Events() {
 
       <View style={{ marginTop: 16 }}>
         <FlatList
-          data={eventData}
+          data={events}
           horizontal
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <EventCard item={item} />}
@@ -87,6 +174,31 @@ function Events() {
 
 const styles = StyleSheet.create({
   // Event Card Styles
+
+  badge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    position: "absolute",
+    top: 10,
+    right: 10,
+  },
+
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontFamily: "LatoBold",
+    fontWeight: "bold",
+  },
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+    borderRadius: 16,
+  },
+
   card: {
     width: 200,
     height: 246,
@@ -120,9 +232,9 @@ const styles = StyleSheet.create({
     left: 12,
   },
   dateText: {
-    fontFamily: "Lato",
-    color: "#C9C9C9",
-    fontSize: 16,
+    fontFamily: "LatoBold",
+    color: "#ffffff",
+    fontSize: 18,
     lineHeight: 19,
   },
   titleText: {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -13,8 +13,38 @@ import {
 } from "react-native";
 import { Ionicons, Entypo } from "@expo/vector-icons";
 import { Stack } from "expo-router";
+import { useRoute } from "@react-navigation/native";
 
-export default function Step3() {
+type LectureItem = {
+  id: string;
+  name: string;
+  designation: string;
+  profileImage: string;
+  biography: string;
+  department: string;
+  email: string;
+  faculty: string;
+  google_meet_link: string;
+  linkedSubjects: string[];
+  office_hours: {
+    day: string[];
+    from: string;
+    to: string;
+    mode: string;
+  }[];
+  office_location: string;
+};
+
+type Step3Props = {
+  data: string;
+};
+
+export default function Step3({ data }: Step3Props) {
+  const route = useRoute();
+  const { lecturerId } = route.params as { lecturerId: string };
+  const [lecturerData, setLecturerData] = useState<LectureItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -22,8 +52,6 @@ export default function Step3() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <Stack.Screen options={{ headerShown: false }} />
-
-        {/* Header */}
         <View style={styles.header}>
           <Ionicons name="arrow-back" size={24} color="black" />
           <Text style={styles.headerTitle}>Request Successfully Sent!</Text>
@@ -31,7 +59,6 @@ export default function Step3() {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-          {/* Cover + Profile Image */}
           <View>
             <Image
               source={require("../../assets/images/main/cover.png")}
@@ -43,19 +70,17 @@ export default function Step3() {
             />
           </View>
 
-          {/* Profile Details */}
           <View style={styles.profileContainer}>
             <Text style={styles.name}>Prof. Kamal Ashoka</Text>
-            <Text style={styles.subtitle}>Senior Lecturer at Java Institute</Text>
+            <Text style={styles.subtitle}>
+              Senior Lecturer at Java Institute
+            </Text>
             <Text style={styles.department}>
               Department of Computing & Information Systems
             </Text>
             <Text style={styles.faculty}>Faculty of Applied Sciences</Text>
           </View>
-
-          {/* Notification Boxes */}
           <View style={styles.notificationContainer}>
-            {/* Top Box */}
             <View style={styles.topBox}>
               <View style={styles.iconCircleGreen}>
                 <Entypo name="paper-plane" size={24} color="#22c55e" />
@@ -67,10 +92,7 @@ export default function Step3() {
                 Usually responds within 5 - 6 hours.
               </Text>
             </View>
-
-            {/* Bottom Box */}
             <View style={styles.bottomBox}>
-            
               <Text style={styles.boxTitle2}>What Happens Next?</Text>
               <Text style={styles.boxDescription2}>
                 Prof. Kamal Ashoka will review your request.{"\n"}
@@ -185,7 +207,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 6,
   },
-    boxTitle2: {
+  boxTitle2: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#111827",
@@ -198,11 +220,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: "center",
   },
-   boxDescription2: {
+  boxDescription2: {
     fontSize: 14,
     color: "#374151",
     lineHeight: 22,
     textAlign: "left",
   },
 });
-

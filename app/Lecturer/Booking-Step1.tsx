@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,71 +11,139 @@ import {
   Pressable,
   TextInput,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, Entypo, Feather } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import CommonStyles from "@/constants/CommonStyles";
+import { useRoute } from "@react-navigation/native";
+import { getLecturer } from "@/services/StorageServices";
 
-export default function Step1() {
+type LectureItem = {
+  id: string;
+  name: string;
+  designation: string;
+  profileImage: string;
+  biography: string;
+  department: string;
+  email: string;
+  faculty: string;
+  google_meet_link: string;
+  linkedSubjects: string[];
+  office_hours: {
+    day: string[];
+    from: string;
+    to: string;
+    mode: string;
+  }[];
+  office_location: string;
+};
+
+type Step1Props = {
+  data: string;
+  setTopic: (value: string) => void;
+  setDescription: (value: string) => void;
+};
+
+export default function Step1({ data, setTopic, setDescription }: Step1Props) {
+  const [localTopic, updateLocalTopic] = useState("");
+  const [localDescription, updateLocalDescription] = useState("");
+
+  useEffect(() => {
+    setTopic(localTopic);
+  }, [localTopic]);
+
+  useEffect(() => {
+    setDescription(localDescription);
+  }, [localDescription]);
+
+  const route = useRoute();
+  const { lecturerId } = route.params as { lecturerId: string };
+
+  const [lecturerData, setLecturerData] = useState<LectureItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLecturer = async () => {
+      try {
+        const data = await getLecturer(lecturerId);
+        setLecturerData(data);
+      } catch (error) {
+        console.error("Failed to fetch lecturer:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLecturer();
+  }, [lecturerId]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" style={{ marginTop: 100 }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!lecturerData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 100 }}>
+          Lecturer not found.
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-      ></KeyboardAvoidingView>
-
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-        <Text style={styles.headerTitle}>Request For Consultation</Text>
-        <View style={{ width: 24 }} />
-      </View>
-      <ScrollView>
-
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
           <View>
             <Image
               source={require("../../assets/images/main/cover.png")}
               style={styles.coverImage}
             />
             <Image
-              source={require("../../assets/images/main/lecturer-1.png")}
+              source={
+                lecturerData.profileImage === "no-image"
+                  ? require("../../assets/images/main/lecturer-1.png")
+                  : { uri: lecturerData.profileImage }
+              }
               style={styles.profileImage}
             />
           </View>
-
           <View style={styles.profileContainer}>
-            <Text style={styles.name}>Prof. Kamal Ashoka</Text>
-            <Text style={styles.title}>Senior lecture at Java Institute</Text>
-            <Text style={styles.department}>
-              Department of Computing & Information Systems
-            </Text>
-            <Text style={styles.faculty}>Faculty of Applied Sciences</Text>
+            <Text style={styles.name}>{lecturerData.name}</Text>
+            <Text style={styles.title}>{lecturerData.designation}</Text>
+            <Text style={styles.department}>{lecturerData.department}</Text>
+            <Text style={styles.faculty}>{lecturerData.faculty}</Text>
           </View>
-
-          {/* Office Hours */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              What would you like to discuss ?
+              What would you like to discuss?
             </Text>
             <View style={{ marginTop: 10 }}>
               <Text style={styles.sectionContent}>Topic/Subject*</Text>
-
               <View style={CommonStyles.inputContainer}>
-                <View style={[CommonStyles.emailInputWrapperWhite]}>
+                <View style={CommonStyles.emailInputWrapperWhite}>
                   <TextInput
                     style={CommonStyles.textInput}
                     placeholder="e.g Research related ..."
                     placeholderTextColor="#777"
+                    value={localTopic}
+                    onChangeText={updateLocalTopic}
                   />
                 </View>
               </View>
             </View>
-
             <View style={{ marginTop: 16 }}>
               <Text style={styles.sectionContent}>Description*</Text>
-
               <View style={CommonStyles.inputContainer}>
                 <View
                   style={[CommonStyles.emailInputWrapperWhite, { height: 188 }]}
@@ -87,16 +155,15 @@ export default function Step1() {
                     textAlignVertical="top"
                     placeholder="e.g. Please describe what you'd like to discuss about*"
                     placeholderTextColor="#777"
+                    value={localDescription}
+                    onChangeText={updateLocalDescription}
                   />
                 </View>
               </View>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </ScrollView>
-      {/* <TouchableOpacity style={styles.consultBtn}>
-        <Text style={styles.consultText}>Request Consultation</Text>
-      </TouchableOpacity> */}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

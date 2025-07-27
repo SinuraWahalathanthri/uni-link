@@ -1,5 +1,5 @@
-import { Link } from "expo-router";
-import React from "react";
+import { Link, useNavigation } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -7,32 +7,76 @@ import {
   Text,
   View,
   StyleSheet,
+  TouchableOpacity,
 } from "react-native";
+import { getLecturers } from "@/services/StorageServices";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
+
+type LectureItem = {
+  id: string;
+  name: string;
+  designation: string;
+  profileImage: string;
+  biography: string;
+  department: string;
+  email: string;
+  faculty: string;
+  google_meet_link: string;
+  linkedSubjects: string[];
+  office_hours: {
+    day: string[];
+    from: string;
+    to: string;
+    mode: string;
+  }[];
+  office_location: string;
+};
 
 function Lecturers() {
-  const lectureData = [
-    {
-      id: "1",
-      lecutureName: "Prof. Ajith Fernando",
-      title: "Senior Lecture",
-      image: require("../../assets/images/lectureImage.png"),
-    },
-    {
-      id: "2",
-      lecutureName: "Prof. Ajith Fernando",
-      title: "Senior Lecture",
-      image: require("../../assets/images/lectureImage.png"),
-    },
-  ];
-  const LectureCard = ({ item }) => (
-    <Pressable style={styles.lectureCard}>
-      <Image source={item.image} style={styles.lectureImage} />
-      <Pressable style={styles.lectureOverlay} />
+  const [lecturers, setLecturers] = useState<LectureItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const navigation = useNavigation<any>();
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "lecturers"), (snapshot) => {
+      const lecturerList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as LectureItem[];
+
+      setLecturers(lecturerList);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const navigateToProfile = (item: LectureItem) => {
+    navigation.navigate("Lecturer/LecturerProfile", {
+      lecturerId: item.id,
+    });
+  };
+
+  const LectureCard = ({ item }: { item: LectureItem }) => (
+    <TouchableOpacity
+      style={styles.lectureCard}
+      onPress={() => navigateToProfile(item)}
+    >
+      <Image
+        source={
+          item.profileImage === null
+            ? require("../../assets/images/main/lecturer-1.png")
+            : { uri: item.profileImage }
+        }
+        style={styles.lectureImage}
+      />
       <View style={styles.lectureTextContainer}>
-        <Text style={styles.lectureNameText}>{item.lecutureName}</Text>
-        <Text style={styles.lectureTitleText}>{item.title}</Text>
+        <Text style={styles.lectureNameText}>{item.name}</Text>
+        <Text style={styles.lectureTitleText}>{item.designation}</Text>
       </View>
-    </Pressable>
+    </TouchableOpacity>
   );
 
   return (
@@ -76,7 +120,7 @@ function Lecturers() {
         }}
       >
         <FlatList
-          data={lectureData}
+          data={lecturers}
           horizontal
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <LectureCard item={item} />}

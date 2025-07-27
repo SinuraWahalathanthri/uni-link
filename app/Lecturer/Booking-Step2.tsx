@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,12 +11,154 @@ import {
   Pressable,
   TextInput,
   KeyboardAvoidingView,
+  ActivityIndicator,
+  ViewStyle,
 } from "react-native";
 import { Ionicons, Entypo, Feather } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import CommonStyles from "@/constants/CommonStyles";
+import { useRoute } from "@react-navigation/native";
+import { getLecturer } from "@/services/StorageServices";
 
-export default function Step2() {
+type LectureItem = {
+  id: string;
+  name: string;
+  designation: string;
+  profileImage: string;
+  biography: string;
+  department: string;
+  email: string;
+  faculty: string;
+  google_meet_link: string;
+  linkedSubjects: string[];
+  office_hours: {
+    day: string[];
+    from: string;
+    to: string;
+    mode: string;
+  }[];
+  office_location: string;
+};
+
+type Step2Props = {
+  data: string;
+  setPreferredDate: (value: string) => void;
+  setMode: (value: string) => void;
+  setPriority: (value: string) => void;
+};
+
+export default function Step2({
+  data,
+  setPreferredDate,
+  setMode,
+  setPriority,
+}: Step2Props) {
+  const route = useRoute();
+  const { lecturerId } = route.params as { lecturerId: string };
+  const meetingPreferences = ["Online", "In-Person", "Either"];
+  const [lecturerData, setLecturerData] = useState<LectureItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [selectedPriority, setSelectedPriority] = useState(null);
+
+  const priorities = [
+    {
+      label: "Low Priority",
+      description: "General Questions, Flexible Timing",
+      tag: "Low",
+      color: "#dcfce7",
+      value: "low",
+    },
+    {
+      label: "Medium Priority",
+      description: "Needs response within 2–3 days",
+      tag: "Medium",
+      color: "#fef9c3",
+      value: "medium",
+    },
+    {
+      label: "High Priority",
+      description: "Urgent or time-sensitive issue",
+      tag: "High",
+      color: "#fee2e2",
+      value: "high",
+    },
+  ];
+
+  useEffect(() => {
+    const fetchLecturer = async () => {
+      try {
+        const data = await getLecturer(lecturerId);
+        setLecturerData(data);
+      } catch (error) {
+        console.error("Failed to fetch lecturer:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLecturer();
+  }, [lecturerId]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" style={{ marginTop: 100 }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!lecturerData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 100 }}>
+          Lecturer not found.
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  const SelectableButton = ({
+    label,
+    isSelected,
+    onPress,
+    style = {},
+  }: {
+    label: string;
+    isSelected: boolean;
+    onPress: () => void;
+    style?: ViewStyle;
+  }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        CommonStyles.btnWrapper,
+        {
+          backgroundColor: isSelected ? "#e6f0fd" : "#ffffff",
+          borderColor: isSelected ? "#2675EC" : "#EDEDED",
+          borderWidth: 1.5,
+          borderRadius: 6,
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+        },
+        style,
+      ]}
+    >
+      <Text
+        style={{
+          ...CommonStyles.textInput,
+          color: isSelected ? "#2675EC" : "#000000",
+          textAlign: "center",
+        }}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -24,11 +166,7 @@ export default function Step2() {
       ></KeyboardAvoidingView>
 
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-        <Text style={styles.headerTitle}>Request For Consultation</Text>
-        <View style={{ width: 24 }} />
-      </View>
+
       <ScrollView>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -39,20 +177,20 @@ export default function Step2() {
               style={styles.coverImage}
             />
             <Image
-              source={require("../../assets/images/main/lecturer-1.png")}
+              source={
+                lecturerData.profileImage === "no-image"
+                  ? require("../../assets/images/main/lecturer-1.png")
+                  : { uri: lecturerData.profileImage }
+              }
               style={styles.profileImage}
             />
           </View>
-
           <View style={styles.profileContainer}>
-            <Text style={styles.name}>Prof. Kamal Ashoka</Text>
-            <Text style={styles.title}>Senior lecture at Java Institute</Text>
-            <Text style={styles.department}>
-              Department of Computing & Information Systems
-            </Text>
-            <Text style={styles.faculty}>Faculty of Applied Sciences</Text>
+            <Text style={styles.name}>{lecturerData.name}</Text>
+            <Text style={styles.title}>{lecturerData.designation}</Text>
+            <Text style={styles.department}>{lecturerData.department}</Text>
+            <Text style={styles.faculty}>{lecturerData.faculty}</Text>
           </View>
-
           {/* Office Hours */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
@@ -63,143 +201,38 @@ export default function Step2() {
 
               <View
                 style={{
-                  width: "100%",
                   flexDirection: "row",
+                  flexWrap: "wrap",
                   justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
+                  gap: 10,
+                  marginTop: 8,
                 }}
               >
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Today</Text>
-                </View>
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Tommorow</Text>
-                </View>
-              </View>
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Today</Text>
-                </View>
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Tommorow</Text>
-                </View>
-              </View>
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Today</Text>
-                </View>
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Tommorow</Text>
-                </View>
+                {["Today", "Tomorrow", "This Week", "Next Week"].map(
+                  (label) => (
+                    <SelectableButton
+                      key={label}
+                      label={label}
+                      isSelected={selectedDate === label}
+                      onPress={() => {
+                        const newValue = selectedDate === label ? null : label;
+                        setSelectedDate(newValue);
+                        setPreferredDate(newValue ?? "");
+                      }}
+                      style={{ width: "48%" }}
+                    />
+                  )
+                )}
               </View>
             </View>
-
-            <View style={{ marginTop: 16 }}>
-              <Text style={styles.sectionContent}>Expected Duration</Text>
-
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Today</Text>
-                </View>
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Tommorow</Text>
-                </View>
-              </View>
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Today</Text>
-                </View>
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Tommorow</Text>
-                </View>
-              </View>
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Today</Text>
-                </View>
-                <View style={[CommonStyles.btnWrapper, { width: "50%" }]}>
-                  <Text style={CommonStyles.textInput}>Tommorow</Text>
-                </View>
-              </View>
-            </View>
-
             <View style={{ marginTop: 16 }}>
               <Text style={styles.sectionContent}>Meeting Preference</Text>
 
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedMode("in-person");
+                  setMode("in-person");
                 }}
-              >
-                <View
-                  style={[
-                    CommonStyles.btnWrapper,
-                    {
-                      width: "100%",
-                      alignItems: "flex-start",
-                      flexDirection: "row",
-                      alignSelf: "center",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={25}
-                    style={{ alignSelf: "center" }}
-                  />
-                  <View style={{ marginLeft: 10 }}>
-                    <Text style={styles.sectionContent}>In-Person Only</Text>
-                    <Text>Cs, Building,Room 1</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View
                 style={[
                   CommonStyles.btnWrapper,
                   {
@@ -208,167 +241,176 @@ export default function Step2() {
                     flexDirection: "row",
                     alignSelf: "center",
                     marginTop: 10,
+                    padding: 12,
+                    borderRadius: 10,
+
+                    backgroundColor:
+                      selectedMode === "in-person" ? "#e6f0fd" : "white",
+                    borderColor:
+                      selectedMode === "in-person" ? "#2675EC" : "#EDEDED",
+                    borderWidth: 1.5,
                   },
                 ]}
               >
                 <Ionicons
                   name="location-outline"
                   size={25}
-                  style={{ alignSelf: "center" }}
+                  style={{
+                    alignSelf: "center",
+                    color: selectedMode === "in-person" ? "#2675EC" : "#000000",
+                  }}
                 />
                 <View style={{ marginLeft: 10 }}>
-                  <Text style={styles.sectionContent}>In-Person Only</Text>
-                  <Text>Cs, Building,Room 1</Text>
+                  <Text
+                    style={{
+                      ...CommonStyles.textInput,
+                      color:
+                        selectedMode === "in-person" ? "#2675EC" : "#000000",
+                    }}
+                  >
+                    In-Person Only
+                  </Text>
+                  <Text style={{ fontFamily: "Lato", color: "grey" }}>
+                    CS Building, Room 1
+                  </Text>
                 </View>
-              </View>
-            </View>
+              </TouchableOpacity>
 
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedMode("virtual");
+                  setMode("virtual");
+                }}
+                style={[
+                  CommonStyles.btnWrapper,
+                  {
+                    width: "100%",
+                    alignItems: "flex-start",
+                    flexDirection: "row",
+                    alignSelf: "center",
+                    marginTop: 10,
+                    padding: 12,
+                    borderRadius: 10,
+                    backgroundColor:
+                      selectedMode === "virtual" ? "#e6f0fd" : "white",
+                    borderColor:
+                      selectedMode === "virtual" ? "#2675EC" : "#EDEDED",
+                    borderWidth: 1.5,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="videocam-outline"
+                  size={25}
+                  style={{
+                    alignSelf: "center",
+                    color: selectedMode === "virtual" ? "#2675EC" : "#000000",
+                  }}
+                />
+                <View style={{ marginLeft: 10 }}>
+                  <Text
+                    style={{
+                      ...CommonStyles.textInput,
+                      color: selectedMode === "virtual" ? "#2675EC" : "#000000",
+                    }}
+                  >
+                    Virtual Meeting
+                  </Text>
+                  <Text style={{ fontFamily: "Lato", color: "grey" }}>
+                    Meeting conducted online
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
             <View style={{ marginTop: 16 }}>
               <Text style={styles.sectionContent}>Priority Level</Text>
 
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View
-                  style={[
-                    CommonStyles.btnWrapper,
-                    {
-                      width: "100%",
-                      alignItems: "flex-start",
-                      flexDirection: "row",
-                      alignSelf: "center",
-                    },
-                  ]}
+              {priorities.map((priority, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    setSelectedPriority(priority.value);
+                    setPriority(priority.value);
+                  }}
+                  style={{
+                    width: "100%",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginTop: 10,
+                    gap: 5,
+                  }}
                 >
-                  <Ionicons
-                    name="information-circle-outline"
-                    size={25}
-                    style={{ alignSelf: "center" }}
-                  />
-                  <View style={{ marginLeft: 10 }}>
-                    <Text style={styles.sectionContent}>Low Priority</Text>
-                    <Text>General Questions, Flexible Timing</Text>
-                  </View>
-
                   <View
-                    style={{
-                      backgroundColor: "#dcfce7",
-                      padding: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 100,
-                      position: "absolute",
-                      right: 10,
-                      top: 10,
-                    }}
-                  >
-                    <Text>Low</Text>
-                  </View>
-                </View>
-              </View>
+                    style={[
+                      CommonStyles.btnWrapper,
+                      {
+                        width: "100%",
+                        alignItems: "flex-start",
+                        flexDirection: "row",
+                        alignSelf: "center",
+                        padding: 12,
+                        borderRadius: 10,
 
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View
-                  style={[
-                    CommonStyles.btnWrapper,
-                    {
-                      width: "100%",
-                      alignItems: "flex-start",
-                      flexDirection: "row",
-                      alignSelf: "center",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="information-circle-outline"
-                    size={25}
-                    style={{ alignSelf: "center" }}
-                  />
-                  <View style={{ marginLeft: 10 }}>
-                    <Text style={styles.sectionContent}>Low Priority</Text>
-                    <Text>General Questions, Flexible Timing</Text>
-                  </View>
-
-                  <View
-                    style={{
-                      backgroundColor: "#fef9c3",
-                      padding: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 100,
-                      position: "absolute",
-                      right: 10,
-                      top: 10,
-                    }}
+                        backgroundColor:
+                          selectedPriority === priority.value
+                            ? "#e6f0fd"
+                            : "white",
+                        borderColor:
+                          selectedPriority === priority.value
+                            ? "#2675EC"
+                            : "#EDEDED",
+                        borderWidth: 1.5,
+                      },
+                    ]}
                   >
-                    <Text>Medium</Text>
-                  </View>
-                </View>
-              </View>
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  gap: 5,
-                  marginTop: 10,
-                }}
-              >
-                <View
-                  style={[
-                    CommonStyles.btnWrapper,
-                    {
-                      width: "100%",
-                      alignItems: "flex-start",
-                      flexDirection: "row",
-                      alignSelf: "center",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="information-circle-outline"
-                    size={25}
-                    style={{ alignSelf: "center" }}
-                  />
-                  <View style={{ marginLeft: 10 }}>
-                    <Text style={styles.sectionContent}>Low Priority</Text>
-                    <Text>General Questions, Flexible Timing</Text>
-                  </View>
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={25}
+                      style={{
+                        alignSelf: "center",
+                        color:
+                          selectedPriority === priority.value
+                            ? "#2675EC"
+                            : "#000000",
+                      }}
+                    />
+                    <View style={{ marginLeft: 10 }}>
+                      <Text
+                        style={{
+                          ...CommonStyles.textInput,
+                          color:
+                            selectedPriority === priority.value
+                              ? "#2675EC"
+                              : "#000000",
+                        }}
+                      >
+                        {priority.label}
+                      </Text>
+                      <Text style={{ fontFamily: "Lato", color: "grey" }}>
+                        {priority.description}
+                      </Text>
+                    </View>
 
-                  <View
-                    style={{
-                      backgroundColor: "#fee2e2",
-                      padding: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 100,
-                      position: "absolute",
-                      right: 10,
-                      top: 10,
-                    }}
-                  >
-                    <Text>High</Text>
+                    <View
+                      style={{
+                        backgroundColor: priority.color,
+                        padding: 8,
+                        paddingHorizontal: 12,
+                        borderRadius: 100,
+                        position: "absolute",
+                        right: 10,
+                        top: 10,
+                      }}
+                    >
+                      <Text>{priority.tag}</Text>
+                    </View>
                   </View>
-                </View>
-              </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </KeyboardAvoidingView>
       </ScrollView>
-      {/* <TouchableOpacity style={styles.consultBtn}>
-        <Text style={styles.consultText}>Request Consultation</Text>
-      </TouchableOpacity> */}
     </SafeAreaView>
   );
 }
