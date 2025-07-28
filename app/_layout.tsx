@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -24,19 +25,16 @@ export default function RootLayout() {
     LatoBlackItalic: require("../assets/fonts/Lato-BlackItalic.ttf"),
     LatoThin: require("../assets/fonts/Lato-Thin.ttf"),
     LatoThinItalic: require("../assets/fonts/Lato-ThinItalic.ttf"),
-
-    Poppins:require("../assets/fonts/Poppins-Regular.ttf"),
-    PoppinsBold:require("../assets/fonts/Poppins-Bold.ttf"),
-    PoppinsMedium:require("../assets/fonts/Poppins-Medium.ttf"),
+    Poppins: require("../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsBold: require("../assets/fonts/Poppins-Bold.ttf"),
+    PoppinsMedium: require("../assets/fonts/Poppins-Medium.ttf"),
   });
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  if (!loaded) return null;
 
   return (
-    <ThemeProvider value={DefaultTheme}>
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -48,5 +46,7 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+    </AuthProvider>
+    
   );
 }

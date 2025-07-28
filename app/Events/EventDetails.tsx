@@ -1,19 +1,24 @@
 import {
+  Alert,
   Image,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  Touchable,
+  TouchableOpacity,
   View,
 } from "react-native";
 import React, { use, useEffect, useState } from "react";
 import { Link, Stack } from "expo-router";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
-import { getEvent } from "@/services/StorageServices";
+import { getEvent, handleRegisterParticipant } from "@/services/StorageServices";
 import { Timestamp } from "firebase/firestore";
-import { WebView } from 'react-native-webview';
+import { WebView } from "react-native-webview";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { useRef, useMemo } from "react";
 
 type EventItem = {
   id: string;
@@ -23,7 +28,9 @@ type EventItem = {
   description: string;
   hostedBy: string;
   location: string;
-  time: string;
+  start_time: string;
+  end_time: string;
+  location_link: string;
   createdAt: string;
   status: string;
 };
@@ -34,6 +41,9 @@ const EventDetails = () => {
 
   const [eventData, setEventData] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ["40%"], []);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -58,6 +68,22 @@ const EventDetails = () => {
       hour12: true,
     });
   };
+
+  const onConfirmRegister = async () => {
+  try {
+    await handleRegisterParticipant(eventData.id); // pass event ID and student ID
+    console.log("Success", "You have been registered.");
+    // setModalVisible(false);
+  } catch (error) {
+    if (error.message === "Already registered") {
+      console.log("Info", "You are already registered.");
+    } else {
+      Alert.alert("Error", "Something went wrong.");
+      console.error(error);
+    }
+  }
+};
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -105,7 +131,9 @@ const EventDetails = () => {
             </Text>
           </Pressable> */}
         </View>
-
+ <TouchableOpacity  onPress={onConfirmRegister}>
+        <Text>Hii</Text>
+        </TouchableOpacity>
         <View style={{ marginTop: 16, gap: 10 }}>
           <View
             style={{
@@ -196,9 +224,9 @@ const EventDetails = () => {
         </View>
 
         {eventData?.location && (
-          <View style={{ height: 200, marginTop: 16 }}>
+          <View style={{ height: 500, marginTop: 16 }}>
             <WebView
-              source={{ uri: eventData.location }}
+              source={{ uri: eventData.location_link }}
               style={{ borderRadius: 10 }}
             />
           </View>
@@ -207,7 +235,8 @@ const EventDetails = () => {
       <View
         style={{ padding: 16, position: "absolute", bottom: 0, width: "100%" }}
       >
-        <Pressable
+        <TouchableOpacity
+          
           style={{
             paddingVertical: 12,
             backgroundColor: "#3D83F5",
@@ -218,12 +247,16 @@ const EventDetails = () => {
             paddingBottom: Platform.OS === "android" ? 50 : 20,
             gap: 8,
           }}
+
+       
         >
           <MaterialIcons name="calendar-month" size={20} color="#ffffff" />
           <Text style={{ fontFamily: "LatoBold", fontSize: 14, color: "#fff" }}>
             Register
           </Text>
-        </Pressable>
+        </TouchableOpacity>
+
+       
       </View>
     </View>
   );

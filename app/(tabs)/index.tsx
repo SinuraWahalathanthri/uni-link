@@ -17,8 +17,12 @@ import { Link } from "expo-router";
 import Lecturers from "@/components/home/Lecturers";
 import QuickAccess from "@/components/home/QuickAccess";
 import Events from "@/components/home/Events";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomeScreen() {
+
+  const { user } = useAuth();
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <View
@@ -37,7 +41,7 @@ export default function HomeScreen() {
         >
           <View style={{ flex: 1 }}>
             <View>
-              <Text style={styles.title}>Hi there, Sinura!</Text>
+              <Text style={styles.title}>Hi there, {user?.name}!</Text>
               <Text style={styles.subTitle}>Every day is a new beginning.</Text>
             </View>
             <Events />

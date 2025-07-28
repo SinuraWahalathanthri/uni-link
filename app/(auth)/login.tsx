@@ -8,15 +8,84 @@ import {
   Text,
   TextInput,
   View,
+  Alert,
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
+import { router, useNavigation } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
 
 const LoginScreen = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const navigation = useNavigation();
+  const { setUser } = useAuth();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Missing Fields", "Please enter email and password/OTP.");
+      return;
+    }
+
+    try {
+      const q = query(collection(db, "lecturer"), where("email", "==", email));
+      const snapshot = await getDocs(q);
+
+      let lecturer = null;
+
+      if (snapshot.empty) {
+        const q2 = query(
+          collection(db, "lecturers"),
+          where("email", "==", email)
+        );
+        const snapshot2 = await getDocs(q2);
+        if (!snapshot2.empty) {
+          lecturer = snapshot2.docs[0].data();
+        }
+      } else {
+        lecturer = snapshot.docs[0].data();
+      }
+
+      if (!lecturer) {
+        Alert.alert("Login Failed", "Lecturer not found.");
+        return;
+      }
+
+      if (lecturer.status === "Deactive") {
+        Alert.alert("Account Deactivated", "Please contact administration.");
+        return;
+      }
+
+      if (lecturer.password) {
+        if (lecturer.password === password) {
+          Alert.alert("Login Successful", `Welcome ${lecturer.name}`);
+          setUser(lecturer);
+          router.replace("/(tabs)");
+        } else {
+          Alert.alert("Incorrect Password", "Please try again.");
+        }
+      } else {
+        const otpExpiry = lecturer.otpExpiry?.toDate();
+        const now = new Date();
+        if (password === lecturer.nic && otpExpiry && now < otpExpiry) {
+          Alert.alert("OTP Login Successful", `Welcome ${lecturer.name}`);
+          setUser(lecturer);
+          router.replace("/(tabs)");
+        } else {
+          Alert.alert("Invalid OTP", "OTP is incorrect or expired.");
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      Alert.alert("Error", "Something went wrong during login.");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,7 +106,6 @@ const LoginScreen = () => {
             style={styles.image}
           />
 
-          {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>University Email or Student ID</Text>
             <View
@@ -49,21 +117,21 @@ const LoginScreen = () => {
               <MaterialCommunityIcons
                 name="email-outline"
                 size={20}
-                color={"#777777"}
+                color={"#777"}
               />
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter your email or student ID"
-                keyboardType="email-address"
+                placeholder="Enter your email or ID"
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
+                value={email}
+                onChangeText={setEmail}
               />
             </View>
           </View>
 
-          {/* Password Input */}
           <View style={styles.passwordContainer}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>Password or OTP</Text>
             <View
               style={[
                 styles.passwordInputWrapper,
@@ -73,34 +141,29 @@ const LoginScreen = () => {
               <MaterialCommunityIcons
                 name="lock-outline"
                 size={20}
-                color={"#777777"}
+                color={"#777"}
               />
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter your password"
+                placeholder="Enter password or OTP"
                 secureTextEntry
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
+                value={password}
+                onChangeText={setPassword}
               />
             </View>
           </View>
 
-          {/* Login Button */}
+          {/* Login */}
           <View style={styles.loginSection}>
-            <Link href={"/(tabs)"} asChild>
-              <Pressable style={styles.loginButton}>
-                <Text style={styles.loginButtonText}>Login</Text>
-              </Pressable>
-            </Link>
-
-            <Pressable onPress={() => console.log("Forgot Password")}>
-              <Text style={styles.forgotText}>Forgot Password?</Text>
+            <Pressable style={styles.loginButton} onPress={handleLogin}>
+              <Text style={styles.loginButtonText}>Login</Text>
             </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Powered by XZORA Devlabs</Text>
       </View>
