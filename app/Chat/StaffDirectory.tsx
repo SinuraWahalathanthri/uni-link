@@ -8,13 +8,30 @@ import {
   TextInput,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { Stack } from "expo-router";
+import { Stack, useNavigation } from "expo-router";
 import StaffList from "@/components/StaffList";
+import { getLecturers } from "@/services/StorageServices";
 
 const StaffDirectory = () => {
   const [emailFocused, setEmailFocused] = useState(false);
+
+  const [lecturers, setLecturers] = useState();
+  const [loading, setLoading] = useState(true);
+
+  const navigation = useNavigation<any>();
+
+  useEffect(() => {
+    const fetchLecturers = async () => {
+      const lecturerList = await getLecturers();
+      setLecturers(lecturerList);
+      setLoading(false);
+      console.log("Lecturers fetched:", lecturerList);
+    };
+    fetchLecturers();
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <Stack.Screen
