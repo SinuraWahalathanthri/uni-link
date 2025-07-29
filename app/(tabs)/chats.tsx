@@ -23,7 +23,7 @@ import { Link, useNavigation } from "expo-router";
 import { getLecturers } from "@/services/StorageServices";
 import ConnectedCard from "@/components/chat/ConnectedCard";
 import DiscoverCard from "@/components/chat/DiscoverCard";
-
+import { ActivityIndicator, Modal } from "react-native-paper";
 
 const ChatCard = ({ item, onPress }) => (
   <Pressable style={styles.card} onPress={onPress}>
@@ -80,34 +80,38 @@ const Discover = ({ item, onPress }) => (
   <DiscoverCard item={item} onPress={onPress} />
 );
 
-
 export default function ChatScreen() {
-  const [emailFocused, setEmailFocused] = useState(false);
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<"connected" | "discover">(
     "connected"
   );
-
-  const [lecturers, setLecturers] = useState();
+  const [lecturers, setLecturers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [searchText, setSearchText] = useState("");
+  const [isFilterVisible, setFilterVisible] = useState(false);
+  const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
+  const [selectedUserType, setSelectedUserType] = useState<string | null>(null);
+
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [connectedLecturers, setConnectedLecturers] = useState([]);
+
   useEffect(() => {
-    const fetchLecturers = async () => {
-      const lecturerList = await getLecturers();
+    const fetchFilteredLecturers = async () => {
+      setLoading(true);
+      const lecturerList = await getLecturers(
+        searchText,
+        selectedFaculty,
+        selectedUserType
+      );
       setLecturers(lecturerList);
       setLoading(false);
-      console.log("Lecturers fetched:", lecturerList);
     };
-    fetchLecturers();
-  }, []);
+    fetchFilteredLecturers();
+  }, [searchText, selectedFaculty, selectedUserType]);
 
-  const selectedData =
-    activeTab === "connected" ? lecturers : lecturers;
   const renderCard = activeTab === "connected" ? Connected : Discover;
-
-  const navigateToChat = () => {
-    navigation.navigate("Chat/ChatScreen");
-  };
+  const navigateToChat = () => navigation.navigate("Chat/ChatScreen");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -196,32 +200,134 @@ export default function ChatScreen() {
                 style={CommonStyles.textInput}
                 placeholder="Search lecturers and staff"
                 placeholderTextColor={"#777777"}
-                keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+
+              <MaterialIcons
+                onPress={() => setFilterVisible(true)}
+                name="filter-list"
+                size={24}
+                color="#9b9b9bff"
               />
             </View>
           </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <FlatList
-            data={selectedData}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingBottom: Platform.OS === "ios" ? 80 : 40,
-            }}
-            renderItem={({ item }) =>
-              React.createElement(renderCard, { item, onPress: navigateToChat })
-            }
-          />
+         <View style={{ flex: 1 }}>
+          {loading ? (
+            <ActivityIndicator size="large" color="#3D83F5" />
+          ) : (
+            <FlatList
+              data={lecturers}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: Platform.OS === "ios" ? 80 : 40 }}
+              renderItem={({ item }) =>
+                React.createElement(renderCard, { item, onPress: navigateToChat })
+              }
+            />
+          )}
         </View>
       </View>
+
+      <Modal
+        visible={isFilterVisible}
+        onDismiss={() => setFilterVisible(false)}
+        style={styles.bottomModal}
+      >
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Filter Lecturers</Text>
+
+          <Text style={styles.sectionTitle}>Faculty</Text>
+          {["Engineering", "Science", "Business"].map((faculty) => (
+            <TouchableOpacity
+              key={faculty}
+              style={[
+                styles.option,
+                selectedFaculty === faculty && styles.selectedOption,
+              ]}
+              onPress={() => setSelectedFaculty(faculty)}
+            >
+              <Text>{faculty}</Text>
+            </TouchableOpacity>
+          ))}
+
+          <Text style={styles.sectionTitle}>User Type</Text>
+          {["Lecturer", "Staff"].map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.option,
+                selectedUserType === type && styles.selectedOption,
+              ]}
+              onPress={() => setSelectedUserType(type)}
+            >
+              <Text>{type}</Text>
+            </TouchableOpacity>
+          ))}
+
+          <Pressable
+            style={styles.applyButton}
+            onPress={() => setFilterVisible(false)}
+          >
+            <Text style={styles.applyButtonText}>Apply Filters</Text>
+          </Pressable>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  filterButton: {
+    backgroundColor: "#3D83F5",
+    padding: 10,
+    marginLeft: 8,
+    borderRadius: 6,
+  },
+  bottomModal: {
+    justifyContent: "flex-end",
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    marginTop: 10,
+    fontWeight: "bold",
+  },
+  option: {
+    padding: 10,
+    borderRadius: 6,
+    backgroundColor: "#f0f0f0",
+    marginTop: 6,
+  },
+  selectedOption: {
+    backgroundColor: "#d0e3ff",
+  },
+  applyButton: {
+    backgroundColor: "#3D83F5",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    alignItems: "center",
+  },
+  applyButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  ///filter
   container2: {
     flexDirection: "row",
     backgroundColor: "#f0f0f0",

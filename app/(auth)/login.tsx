@@ -18,6 +18,16 @@ import { db } from "@/services/FirebaseConfig";
 import { router, useNavigation } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 
+type Student = {
+  id: string;
+  name?: string;
+  email?: string;
+  status?: string;
+  password?: string;
+  nic?: string;
+  otpExpiry?: { toDate: () => Date };
+};
+
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,48 +44,36 @@ const LoginScreen = () => {
     }
 
     try {
-      const q = query(collection(db, "lecturer"), where("email", "==", email));
+      const q = query(collection(db, "students"), where("email", "==", email));
       const snapshot = await getDocs(q);
 
-      let lecturer = null;
-
       if (snapshot.empty) {
-        const q2 = query(
-          collection(db, "lecturers"),
-          where("email", "==", email)
-        );
-        const snapshot2 = await getDocs(q2);
-        if (!snapshot2.empty) {
-          lecturer = snapshot2.docs[0].data();
-        }
-      } else {
-        lecturer = snapshot.docs[0].data();
-      }
-
-      if (!lecturer) {
-        Alert.alert("Login Failed", "Lecturer not found.");
+        Alert.alert("Login Failed", "Student not found.");
         return;
       }
 
-      if (lecturer.status === "Deactive") {
+      const docData = snapshot.docs[0];
+      const student: Student = { id: docData.id, ...docData.data() };
+
+      if (student.status === "Deactive") {
         Alert.alert("Account Deactivated", "Please contact administration.");
         return;
       }
 
-      if (lecturer.password) {
-        if (lecturer.password === password) {
-          Alert.alert("Login Successful", `Welcome ${lecturer.name}`);
-          setUser(lecturer);
+      if (student.password) {
+        if (student.password === password) {
+          Alert.alert("Login Successful", `Welcome ${student.name}`);
+          setUser(student);
           router.replace("/(tabs)");
         } else {
           Alert.alert("Incorrect Password", "Please try again.");
         }
       } else {
-        const otpExpiry = lecturer.otpExpiry?.toDate();
+        const otpExpiry = student.otpExpiry?.toDate();
         const now = new Date();
-        if (password === lecturer.nic && otpExpiry && now < otpExpiry) {
-          Alert.alert("OTP Login Successful", `Welcome ${lecturer.name}`);
-          setUser(lecturer);
+        if (password === student.nic && otpExpiry && now < otpExpiry) {
+          Alert.alert("OTP Login Successful", `Welcome ${student.name}`);
+          setUser(student);
           router.replace("/(tabs)");
         } else {
           Alert.alert("Invalid OTP", "OTP is incorrect or expired.");

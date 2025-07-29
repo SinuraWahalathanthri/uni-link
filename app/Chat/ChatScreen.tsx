@@ -61,16 +61,16 @@ export default function ChatScreen() {
   const route = useRoute();
   const { lecturerId } = route.params as { lecturerId: string };
 
-  const [lecturerData, setLecturerData] = useState(null);
+  const [lecturerData, setLecturerData] = useState<{ id: string; name?: string; designation?: string; department?: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
 
-  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
-  const [previewImageUrl, setPreviewImageUrl] = useState(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
 
   const scrollViewRef = useRef(null);
@@ -104,7 +104,7 @@ export default function ChatScreen() {
       const chatData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as Message[];
 
       setMessages(chatData);
 
@@ -143,7 +143,7 @@ export default function ChatScreen() {
     }
   };
 
-  const handleLongPress = (message) => {
+  const handleLongPress = (message: Message) => {
     setSelectedMessage(message);
     setDeleteModalVisible(true);
   };
@@ -289,7 +289,7 @@ export default function ChatScreen() {
                 {msg.imageUrl && (
                   <>
                     <TouchableOpacity
-                      onPress={() => handleImagePress(msg.imageUrl)}
+                      onPress={() => handleImagePress(msg.imageUrl!)}
                     >
                       <Image
                         source={{ uri: msg.imageUrl }}
