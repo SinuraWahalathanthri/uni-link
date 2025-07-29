@@ -1,200 +1,226 @@
-import { MaterialIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
 import React from "react";
-import { Image, Pressable, ScrollView, Text } from "react-native";
-import { View } from "react-native-reanimated/lib/typescript/Animated";
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Link, useNavigation } from "expo-router";
+import AvatarComponent from "./AvatarComponent";
 
-function DiscoverCard() {
+type LectureItem = {
+  id: string;
+  name: string;
+  designation: string;
+  profileImage: string;
+  biography: string;
+  department: string;
+  email: string;
+  faculty: string;
+  google_meet_link: string;
+  linkedSubjects: string[];
+  office_hours: {
+    day: string[];
+    from: string;
+    to: string;
+    mode: string;
+  }[];
+  office_location: string;
+};
+
+function DiscoverCard({ item, onPress }) {
+  const navigation = useNavigation();
+  const lecturerId = item.id;
+
+  const navigateToChat = (lecturerId: string) => {
+    navigation.navigate("Chat/ChatScreen", { lecturerId });
+  };
+
+  const navigateToProfile = (lectureId: string) => {
+    navigation.navigate("Lecturer/LecturerProfile", {
+      lecturerId: lectureId,
+    });
+  };
+
   return (
-    <View
-      style={{
-        padding: 12,
-        borderWidth: 1,
-        borderColor: "#D7D7D7",
-        borderRadius: 12,
-        marginTop: 13,
-        backgroundColor: "#fff",
-        flex: 1,
-      }}
-    >
-      <View style={{ flexDirection: "row", gap: 12, flex: 1, width: "100%" }}>
-        <View style={{ borderRadius: 12, marginBottom: 10 }}>
-          <Image
-            source={require("../../assets/images/lectureImage.png")}
-            style={{ width: 91, height: 91, borderRadius: 12 }}
-            contentFit="cover"
+    <View style={styles.cardContainer}>
+      <View style={styles.rowContainer}>
+        <View style={styles.imageWrapper}>
+
+          <AvatarComponent
+            imageUrl={item.profileImage}
+            name={item.name}
+            size={58}
+            style={styles.image}
           />
-          <View
-            style={{
-              width: 13,
-              height: 13,
-              backgroundColor: "#48D562",
-              position: "absolute",
-              bottom: 8,
-              right: -2,
-              borderRadius: 100,
-              borderWidth: 1,
-              borderColor: "#fff",
-            }}
-          ></View>
         </View>
 
-        <View style={{ marginBottom: 8, gap: 4, flex: 1 }}>
-          <Text style={{ fontFamily: "LatoBold", fontSize: 16, color: "#000" }}>
-            Prof. Tharaka Prasanna
-          </Text>
-          <View
-            style={{
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
+        <View style={styles.infoContainer}>
+          <Text style={styles.nameText}>{item.name}</Text>
+          <Text style={styles.titleText}>{item.designation} </Text>
+          <Text style={styles.subTitleText}>{item.department}</Text>
+
+          <ScrollView
+            horizontal
+            contentContainerStyle={styles.tagScrollContainer}
+            showsHorizontalScrollIndicator={false}
           >
-            <Text
-              style={{
-                fontFamily: "LatoBold",
-                fontSize: 14,
-                color: "#3D83F5",
-                lineHeight: 20,
-              }}
-            >
-              Senior Lecturer
-            </Text>
+            {item.linkedSubjects?.slice(0, 2).map((subject, index) => (
+              <View key={index} style={styles.tag}>
+                <Text style={styles.tagText}>{subject}</Text>
+              </View>
+            ))}
 
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: "Lato",
-                  fontSize: 13,
-                  color: "#919191",
-                  lineHeight: 20,
-                }}
-              >
-                Computer Science
-              </Text>
-            </View>
-          </View>
-
-          <View style={{ flex: 1, flexWrap: "wrap", flexDirection: "row" }}>
-            <ScrollView
-              horizontal
-              contentContainerStyle={{
-                flexDirection: "row",
-                gap: 8,
-                alignItems: "center",
-              }}
-              showsHorizontalScrollIndicator={false}
-            >
-              <View
-                style={{
-                  paddingVertical: 1,
-                  paddingHorizontal: 18,
-                  backgroundColor: "#DBEAFE",
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "LatoBold",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#2A4BB4",
-                  }}
-                >
-                  Machine Learning
+            {item.linkedSubjects?.length > 2 && (
+              <View style={styles.tagMuted}>
+                <Text style={styles.tagMutedText}>
+                  +{item.linkedSubjects.length - 2} more
                 </Text>
               </View>
-              <View
-                style={{
-                  paddingVertical: 1,
-                  paddingHorizontal: 18,
-                  backgroundColor: "#DBEAFE",
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "LatoBold",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#2A4BB4",
-                  }}
-                >
-                  Database System
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingVertical: 1,
-                  paddingHorizontal: 18,
-                  backgroundColor: "#f3f4f6",
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "LatoBold",
-                    fontSize: 11,
-                    lineHeight: 28,
-                    color: "#5D6673",
-                  }}
-                >
-                  +1 more
-                </Text>
-              </View>
-            </ScrollView>
-          </View>
+            )}
+          </ScrollView>
         </View>
       </View>
-      <View style={{ flexDirection: "row", gap: 12 }}>
-        <Link href={"/eventsDetails"} asChild>
-          <Pressable
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              backgroundColor: "#3D83F5",
-              borderRadius: 100,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              gap: 8,
-            }}
-          >
-            <MaterialIcons
-              name="chat-bubble-outline"
-              size={20}
-              color="#ffffff"
-            />
-            <Text
-              style={{ fontFamily: "LatoBold", fontSize: 14, color: "#fff" }}
-            >
-              Start Chat
-            </Text>
-          </Pressable>
-        </Link>
+
+      <View style={styles.buttonRow}>
         <Pressable
-          style={{
-            flex: 1,
-            paddingVertical: 12,
-            backgroundColor: "#E6E5E7",
-            borderRadius: 100,
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 8,
-          }}
+          style={styles.chatButton}
+          onPress={() => navigateToChat(lecturerId)}
         >
-          <Text style={{ fontFamily: "LatoBold", fontSize: 14 }}>
-            View Profile
-          </Text>
+          <MaterialIcons name="chat-bubble-outline" size={18} color="#fff" />
+          <Text style={styles.buttonText}>Chat</Text>
+        </Pressable>
+        <Pressable
+          style={styles.profileButton}
+          onPress={() => navigateToProfile(lecturerId)}
+        >
+          <Text style={styles.buttonSecondaryText}>Profile</Text>
         </Pressable>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  cardContainer: {
+    padding: 14,
+    borderWidth: 0.8,
+    borderColor: "#ececec",
+    borderRadius: 12,
+    marginTop: 12,
+    backgroundColor: "#fff",
+    elevation: 1,
+  },
+  rowContainer: {
+    flexDirection: "row",
+    gap: 14,
+  },
+  imageWrapper: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  image: {
+    width: 85,
+    height: 85,
+    borderRadius: 12,
+  },
+  statusIndicator: {
+    width: 15,
+    height: 15,
+    backgroundColor: "#48D562",
+    position: "absolute",
+    bottom: 6,
+    right: 6,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: "#fff",
+  },
+  infoContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  nameText: {
+    fontFamily: "LatoBold",
+    fontSize: 16,
+    color: "#111",
+  },
+  titleText: {
+    fontFamily: "Lato",
+    fontSize: 14,
+    color: "#3D83F5",
+    marginTop: 2,
+  },
+  subTitleText: {
+    fontFamily: "Lato",
+    fontSize: 14,
+    color: "#666",
+    marginVertical: 2,
+  },
+  tagScrollContainer: {
+    // flexDirection: "row",
+    gap: 6,
+    marginTop: 4,
+  },
+  tag: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#EEF4FF",
+    borderRadius: 50,
+    alignSelf: "center",
+  },
+  tagText: {
+    fontFamily: "Lato",
+    fontSize: 12,
+    color: "#2A4BB4",
+  },
+  tagMuted: {
+    backgroundColor: "#f5f5f5",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 50,
+    alignSelf: "center",
+  },
+  tagMutedText: {
+    fontFamily: "Lato",
+    fontSize: 11,
+    color: "#666",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+  },
+  chatButton: {
+    flex: 1,
+    paddingVertical: 10,
+    backgroundColor: "#3D83F5",
+    borderRadius: 50,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+  },
+  buttonText: {
+    fontFamily: "LatoBold",
+    fontSize: 13,
+    color: "#fff",
+  },
+  profileButton: {
+    flex: 1,
+    paddingVertical: 10,
+    backgroundColor: "#F2F3F5",
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  buttonSecondaryText: {
+    fontFamily: "LatoBold",
+    fontSize: 13,
+    color: "#333",
+  },
+});
 
 export default DiscoverCard;
