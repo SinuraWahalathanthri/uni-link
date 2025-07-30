@@ -1,10 +1,19 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 type Student = {
-  id:string,
+  id: string;
   name: string;
   email: string;
   status?: string;
+  added_by?: string;
+  batch?: string;
+  created_at?: any; 
+  degree?: string;
+  department?: string;
+  institutional_id?: string;
+  otpExpiry?: number;
+  password?: string;
+  year?: string;
 };
 
 type AuthContextType = {

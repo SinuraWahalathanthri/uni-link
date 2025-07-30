@@ -44,15 +44,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="news"
-        options={{
-          title: 'News',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="newspaper" size={28} color={color} />
-          ),
-        }}
-      />
+     
       <Tabs.Screen
         name="events"
         options={{
@@ -83,6 +75,16 @@ export default function TabLayout() {
           title: 'Groups',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="account-group" size={28} color={color} />
+          ),
+        }}
+      />
+
+       <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="person" size={28} color={color} />
           ),
         }}
       />

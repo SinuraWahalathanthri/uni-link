@@ -1,8 +1,15 @@
 import React from "react";
 import { Image, View, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "expo-router";
+import { TouchableOpacity } from "react-native";
 
 export default function AppHeader() {
+  const navigation = useNavigation();
+
+  const navigateToProfile = () => {
+    navigation.navigate("Profile/Profile");
+  };
   return (
     <View
       style={{
@@ -28,10 +35,12 @@ export default function AppHeader() {
         <MaterialCommunityIcons name="magnify" size={24} />
         <MaterialCommunityIcons name="bell-outline" size={24} />
 
-        <Image
-          source={require("../../assets/images/profileImage.png")}
-          style={styles.profileImage}
-        />
+        <TouchableOpacity onPress={navigateToProfile}>
+          <Image
+            source={require("../../assets/images/profileImage.png")}
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
