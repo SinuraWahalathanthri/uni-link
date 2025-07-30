@@ -1,6 +1,7 @@
 import {
   Alert,
   Image,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -14,9 +15,9 @@ import React, { use, useEffect, useState } from "react";
 import { Link, Stack, useNavigation } from "expo-router";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
+import { format, isSameMonth, isSameYear } from "date-fns";
 import {
   getEvent,
-  handleRegisterParticipant,
   registerParticipant,
   unregisterParticipant,
 } from "@/services/StorageServices";
@@ -138,8 +139,6 @@ const EventDetails = () => {
     return null;
   };
 
-  const registerForEvent = () => {};
-
   const coords =
     eventData && eventData.location_link
       ? extractLatLng(eventData.location_link)
@@ -167,7 +166,12 @@ const EventDetails = () => {
 
       <Image source={{ uri: eventData?.imageUrl }} style={styles.authorImage} />
       <ScrollView
-        style={{ marginTop: 16, paddingHorizontal: 16 }}
+        style={{
+          flex: 1,
+          marginTop: 16,
+          paddingHorizontal: 16,
+          marginBottom: 100,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ gap: 5 }}>
@@ -181,58 +185,63 @@ const EventDetails = () => {
           </Text>
         </View>
 
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}></View>
+        <View
+          style={{ flexDirection: "row", gap: 12, backgroundColor: "red" }}
+        ></View>
 
         <View style={{ marginTop: 16, gap: 10 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Feather name="calendar" size={18} color="#000000" />
-            <Text
-              style={{
-                fontFamily: "Lato",
-                fontSize: 16,
-                color: "#000000",
-                marginLeft: 4,
-              }}
-            >
-              {eventData?.date.toDate().toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </Text>
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Feather name="clock" size={18} color="#000000" />
-            <Text
-              style={{
-                fontFamily: "Lato",
-                fontSize: 16,
-                color: "#000000",
-                marginLeft: 4,
-              }}
-            >
-              {eventData?.start_time.toDate().toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}{" "}
-              {" - "}{" "}
-              {eventData?.end_time.toDate().toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}
-            </Text>
+          <View style={{ gap: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="calendar" size={18} color="#000000" />
+              <Text
+                style={{
+                  fontFamily: "LatoBold",
+                  fontSize: 16,
+                  color: "#000000",
+                  marginLeft: 10,
+                }}
+              >
+                {eventData?.startDate && eventData?.endDate
+                  ? (() => {
+                      const start = new Date(eventData.startDate);
+                      const end = new Date(eventData.endDate);
+
+                      if (isSameMonth(start, end)) {
+                        return `${format(start, "EEE, MMM d")} - ${format(
+                          end,
+                          "EEE, d, yyyy"
+                        )}`;
+                      } else if (isSameYear(start, end)) {
+                        return `${format(start, "MMM d")} - ${format(
+                          end,
+                          "MMM d, yyyy"
+                        )}`;
+                      } else {
+                        return `${format(start, "MMM d, yyyy")} - ${format(
+                          end,
+                          "MMM d, yyyy"
+                        )}`;
+                      }
+                    })()
+                  : "Date not available"}
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="clock" size={18} color="#000000" />
+              <Text
+                style={{
+                  fontFamily: "LatoBold",
+                  fontSize: 16,
+                  color: "#000000",
+                  marginLeft: 10,
+                }}
+              >
+                {eventData?.startTime}
+                {"   "}-{"   "}
+                {eventData?.endTime}
+              </Text>
+            </View>
           </View>
           <View
             style={{
@@ -245,10 +254,11 @@ const EventDetails = () => {
               style={{
                 fontFamily: "Lato",
                 fontSize: 16,
-                color: "#000000",
+                color: "#283f3fff",
                 marginLeft: 4,
                 textDecorationLine: "underline",
               }}
+              onPress={() => Linking.openURL(eventData?.location_link)}
             >
               {eventData?.location}
             </Text>
@@ -430,7 +440,9 @@ const EventDetails = () => {
                   }
                 }}
               >
-                <Text style={{ color: "#fff", fontSize: 16 , fontFamily:"Lato"}}>
+                <Text
+                  style={{ color: "#fff", fontSize: 16, fontFamily: "Lato" }}
+                >
                   {isCancel ? "Yes, Cancel" : "Yes, Confirm"}
                 </Text>
               </TouchableOpacity>

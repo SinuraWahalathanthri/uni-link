@@ -20,57 +20,11 @@ import React, { useEffect, useState } from "react";
 import CommonStyles from "@/constants/CommonStyles";
 import AppHeader from "@/components/main/Header";
 import { Link, useNavigation } from "expo-router";
-import { getLecturers } from "@/services/StorageServices";
+import { getConnectedLecturers, getLecturers } from "@/services/StorageServices";
 import ConnectedCard from "@/components/chat/ConnectedCard";
 import DiscoverCard from "@/components/chat/DiscoverCard";
 import { ActivityIndicator, Modal } from "react-native-paper";
-
-const ChatCard = ({ item, onPress }) => (
-  <Pressable style={styles.card} onPress={onPress}>
-    <View style={styles.row}>
-      <View style={styles.row}>
-        <Image source={item.image} style={styles.profileImage} />
-        <View style={styles.dot2} />
-      </View>
-      <View style={styles.content}>
-        {/* Title */}
-        <View style={[styles.row, { justifyContent: "space-between" }]}>
-          <Text style={styles.cardTitle}>Dr.Sarah Johnsons</Text>
-          <Text
-            style={[
-              styles.metaTextLight,
-              { marginTop: 5, alignContent: "flex-end", fontSize: 12 },
-            ]}
-          >
-            4:15 PM
-          </Text>
-        </View>
-
-        {/* Meta Row */}
-        <View style={[styles.row, { justifyContent: "space-between" }]}>
-          <View style={styles.metaRow}>
-            <Text style={styles.tag}>Lecturer</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.metaText}>Computer Science</Text>
-          </View>
-
-          {item.unreadCount > 0 && (
-            <View style={{ marginTop: 6, marginRight: 4 }}>
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>2</Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        <Text numberOfLines={2} style={styles.metaTextLight}>
-          Your assignment submission is good, still needs more work to do putha.
-          Dw we can do this together. you got this!!
-        </Text>
-      </View>
-    </View>
-  </Pressable>
-);
+import { useAuth } from "@/context/AuthContext";
 
 const Connected = ({ item, onPress }) => (
   <ConnectedCard item={item} onPress={onPress} />
@@ -82,6 +36,7 @@ const Discover = ({ item, onPress }) => (
 
 export default function ChatScreen() {
   const navigation = useNavigation();
+  const {user} = useAuth();
   const [activeTab, setActiveTab] = useState<"connected" | "discover">(
     "connected"
   );
@@ -92,7 +47,6 @@ export default function ChatScreen() {
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
   const [selectedUserType, setSelectedUserType] = useState<string | null>(null);
-
   const [emailFocused, setEmailFocused] = useState(false);
   const [connectedLecturers, setConnectedLecturers] = useState([]);
 
@@ -109,6 +63,16 @@ export default function ChatScreen() {
     };
     fetchFilteredLecturers();
   }, [searchText, selectedFaculty, selectedUserType]);
+
+
+useEffect(() => {
+  const fetchData = async () => {
+    const lecturers = await getConnectedLecturers(user?.id);
+    setConnectedLecturers(lecturers);
+  };
+
+  fetchData();
+}, []);
 
   const renderCard = activeTab === "connected" ? Connected : Discover;
   const navigateToChat = () => navigation.navigate("Chat/ChatScreen");

@@ -37,6 +37,8 @@ import { getLecturer } from "@/services/StorageServices";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import axios from "axios";
+import { goBack } from "expo-router/build/global-state/routing";
+import { useAuth } from "@/context/AuthContext";
 
 type Message = {
   id: string;
@@ -54,12 +56,13 @@ const CLOUDINARY_URL_BASE = "https://api.cloudinary.com/v1_1/dudwypfcf";
 const IMAGE_UPLOAD_PRESET = "unilink";
 const PDF_UPLOAD_PRESET = "unilink-docs";
 
-const student_id = "UfoTRYgJVOuszd5udS9L";
+
 
 export default function ChatScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { lecturerId } = route.params as { lecturerId: string };
+  const {user} = useAuth();
 
   const [lecturerData, setLecturerData] = useState<{ id: string; name?: string; designation?: string; department?: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +77,7 @@ export default function ChatScreen() {
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
 
   const scrollViewRef = useRef(null);
+  const student_id = user?.id;
 
   useEffect(() => {
     const fetchLecturer = async () => {
@@ -225,7 +229,9 @@ export default function ChatScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <Feather name="arrow-left" size={24} color="#333" />
+        <TouchableOpacity onPress={() => goBack()}>
+          <Feather name="arrow-left" size={24} color="#333" />
+        </TouchableOpacity>
 
         <Pressable onPress={navigateToProfile}>
           <Image
@@ -361,14 +367,6 @@ export default function ChatScreen() {
             <TouchableOpacity onPress={handleImageUpload}>
               <Entypo name="plus" size={20} color="#777" />
             </TouchableOpacity>
-            {/* <TouchableOpacity>
-              <Entypo
-                name="emoji-happy"
-                size={20}
-                color="#777"
-                style={{ marginLeft: 10 }}
-              />
-            </TouchableOpacity> */}
             <View style={styles.textinputContainer}>
               <TextInput
                 style={styles.textInput}
@@ -490,6 +488,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 4,
+    marginLeft:-10,
   },
   badge: {
     backgroundColor: "#1E88E5",

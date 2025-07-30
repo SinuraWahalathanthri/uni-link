@@ -8,8 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Stack, useNavigation } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
 
 export default function ChangePasswordScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -18,11 +23,43 @@ export default function ChangePasswordScreen() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  
 
-  const handleChangePassword = () => {
-    // TODO: Add password update logic
-    console.log("Password changed!");
+  const navigation = useNavigation();
+ const { user } = useAuth(); 
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Error", "New passwords do not match.");
+      return;
+    }
+
+    try {
+      const studentRef = doc(db, "students", user.id); 
+      const studentSnap = await getDoc(studentRef);
+
+      if (!studentSnap.exists()) {
+        Alert.alert("Error", "Student record not found.");
+        return;
+      }
+
+      const studentData = studentSnap.data();
+
+      if (studentData.password !== currentPassword) {
+        Alert.alert("Error", "Current password is incorrect.");
+        return;
+      }
+
+      await updateDoc(studentRef, {
+        password: newPassword,
+      });
+
+      Alert.alert("Success", "Password updated successfully!");
+      navigation.goBack();
+
+    } catch (error) {
+      console.error("Password update error:", error);
+      Alert.alert("Error", "Failed to update password. Please try again.");
+    }
   };
 
   return (
@@ -31,6 +68,40 @@ export default function ChangePasswordScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
+        <Stack.Screen
+          options={{
+            headerShown: false,
+          }}
+        />
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 16,
+            justifyContent: "space-between",
+            backgroundColor: "#fff",
+            borderBottomWidth: 1,
+            borderColor: "#F3F3F3",
+            paddingTop: Platform.OS === "android" ? 74 : 50,
+          }}
+        >
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color="black"
+            onPress={() => navigation.goBack()}
+          />
+          <Text
+            style={{
+              fontSize: 20,
+              fontFamily: "LatoBold",
+            }}
+          >
+            Change Password
+          </Text>
+          <View style={{ width: 24 }} />
+        </View>
+
         <ScrollView
           contentContainerStyle={{
             padding: 20,
@@ -39,20 +110,6 @@ export default function ChangePasswordScreen() {
           }}
           showsVerticalScrollIndicator={false}
         >
-          <Text
-            style={{
-              fontSize: 26,
-              fontWeight: "bold",
-              fontFamily: "LatoBold",
-              color: "#3D83F5",
-              textAlign: "center",
-              marginBottom: 30,
-            }}
-          >
-            Change Password
-          </Text>
-
-          {/* Current Password */}
           <View
             style={{
               marginBottom: 20,

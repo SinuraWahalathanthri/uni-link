@@ -19,6 +19,7 @@ import { Stack } from "expo-router";
 import CommonStyles from "@/constants/CommonStyles";
 import { useRoute } from "@react-navigation/native";
 import { getLecturer } from "@/services/StorageServices";
+import AvatarComponent from "@/components/chat/AvatarComponent";
 
 type LectureItem = {
   id: string;
@@ -59,8 +60,7 @@ export default function Step2({
   const [lecturerData, setLecturerData] = useState<LectureItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = useState(null);
 
@@ -176,13 +176,11 @@ export default function Step2({
               source={require("../../assets/images/main/cover.png")}
               style={styles.coverImage}
             />
-            <Image
-              source={
-                lecturerData.profileImage === "no-image"
-                  ? require("../../assets/images/main/lecturer-1.png")
-                  : { uri: lecturerData.profileImage }
-              }
-              style={styles.profileImage}
+            <AvatarComponent
+              imageUrl={lecturerData.profileImage}
+              name={lecturerData.name}
+              size={58}
+              style={[styles.profileImage]}
             />
           </View>
           <View style={styles.profileContainer}>
@@ -208,21 +206,36 @@ export default function Step2({
                   marginTop: 8,
                 }}
               >
-                {["Today", "Tomorrow", "This Week", "Next Week"].map(
-                  (label) => (
+                {[
+                  "Today",
+                  "Tomorrow",
+                  "This Week",
+                  "Next Week",
+                  "Within 2 Weeks",
+                  "Flexible",
+                ].map((label) => {
+                  const isSelected = selectedDates.includes(label);
+                  return (
                     <SelectableButton
                       key={label}
                       label={label}
-                      isSelected={selectedDate === label}
+                      isSelected={isSelected}
                       onPress={() => {
-                        const newValue = selectedDate === label ? null : label;
-                        setSelectedDate(newValue);
-                        setPreferredDate(newValue ?? "");
+                        let updatedDates;
+                        if (isSelected) {
+                          updatedDates = selectedDates.filter(
+                            (date) => date !== label
+                          );
+                        } else {
+                          updatedDates = [...selectedDates, label];
+                        }
+                        setSelectedDates(updatedDates);
+                        setPreferredDate(updatedDates); 
                       }}
                       style={{ width: "48%" }}
                     />
-                  )
-                )}
+                  );
+                })}
               </View>
             </View>
             <View style={{ marginTop: 16 }}>
@@ -317,7 +330,7 @@ export default function Step2({
                     Virtual Meeting
                   </Text>
                   <Text style={{ fontFamily: "Lato", color: "grey" }}>
-                    Meeting conducted online
+                    Video call via university platform
                   </Text>
                 </View>
               </TouchableOpacity>

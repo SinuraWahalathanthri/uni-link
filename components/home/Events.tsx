@@ -62,7 +62,9 @@ function Events() {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
-      query(collection(db, "events"), orderBy("createdAt", "desc")),
+      query(collection(db, "events"),
+      // orderBy("createdAt", "desc")
+    ),
       (snapshot) => {
         const eventList = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -84,14 +86,14 @@ function Events() {
   };
 
   const EventCard = ({ item }: { item: EventItem }) => {
-
-    const isNew = (createdAt: Timestamp) => {
+    const isNew = (createdAt: string) => {
       const now = new Date();
-      const createdDate = createdAt.toDate();
+      const createdDate = new Date(createdAt);
       const diffInMs = now.getTime() - createdDate.getTime();
       const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
       return diffInDays <= 3;
     };
+
     const showNewBadge = item.createdAt && isNew(item.createdAt);
 
     return (
@@ -112,19 +114,18 @@ function Events() {
           <View style={styles.textContainer}>
             <Text style={styles.dateText}>{item.title}</Text>
             <Text numberOfLines={2} style={styles.titleText}>
-              <Text numberOfLines={2} style={styles.titleText}>
-                {item.date.toDate().toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </Text>
+              {new Date(item.startDate).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
             </Text>
           </View>
         </LinearGradient>
       </Pressable>
     );
   };
+
 
   return (
     <>

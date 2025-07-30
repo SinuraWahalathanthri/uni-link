@@ -3,6 +3,7 @@ import { Image, View, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { TouchableOpacity } from "react-native";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AppHeader() {
   const navigation = useNavigation();
@@ -10,6 +11,8 @@ export default function AppHeader() {
   const navigateToProfile = () => {
     navigation.navigate("Profile/Profile");
   };
+  const { user } = useAuth();
+
   return (
     <View
       style={{
@@ -35,9 +38,13 @@ export default function AppHeader() {
         <MaterialCommunityIcons name="magnify" size={24} />
         <MaterialCommunityIcons name="bell-outline" size={24} />
 
-        <TouchableOpacity onPress={navigateToProfile}>
+        <TouchableOpacity>
           <Image
-            source={require("../../assets/images/profileImage.png")}
+            source={{
+              uri:
+                user?.profileImage ||
+                "https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_640.png",
+            }}
             style={styles.profileImage}
           />
         </TouchableOpacity>
@@ -62,6 +69,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     alignSelf: "center",
+    borderRadius:100,
   },
   title: {
     fontFamily: "LatoBold",

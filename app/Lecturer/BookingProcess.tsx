@@ -17,11 +17,13 @@ import Step1 from "./Booking-Step1";
 import Step2 from "./Booking-Step2";
 import Step3 from "./Booking-Step3";
 import { useRoute } from "@react-navigation/native";
-import { getLecturer } from "@/services/StorageServices";
+import { addNotification, getLecturer } from "@/services/StorageServices";
 import { useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/services/FirebaseConfig";
+import { ActivityIndicator, Modal } from "react-native-paper";
+import { useAuth } from "@/context/AuthContext";
 
 type LectureItem = {
   id: string;
@@ -48,12 +50,14 @@ export default function BookingProcess() {
   const { lecturerId } = route.params as { lecturerId: string };
   const [lecturerData, setLecturerData] = useState<LectureItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [preferedDate, setPreferredDate] = useState("");
   const [mode, setMode] = useState("Online");
   const [priority, setPriority] = useState("Normal");
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchLecturer = async () => {
@@ -66,7 +70,6 @@ export default function BookingProcess() {
         setLoading(false);
       }
     };
-
     fetchLecturer();
   }, [lecturerId]);
 
@@ -94,11 +97,32 @@ export default function BookingProcess() {
   ).current;
 
   const handleNext = () => {
-    if (currentPage < 2) {
+    if (currentPage === 1) {
+      if (!topic.trim() || !description.trim()) {
+        Alert.alert(
+          "Missing Information",
+          "Please fill in both topic and description."
+        );
+        return;
+      }
+    }
+
+    if (currentPage === 2) {
+      if (!preferedDate || !mode || !priority) {
+        Alert.alert(
+          "Missing Information",
+          "Please fill in all booking details."
+        );
+        return;
+      }
+      setShowConfirmSheet(true);
+      return;
+    }
+
+    if (currentPage < 3) {
       setCurrentPage(currentPage + 1);
     } else {
-      submitConsultationRequest();
-
+      setShowConfirmSheet(true);
       Animated.timing(bookingAnim, {
         toValue: 1,
         duration: 500,
@@ -108,7 +132,8 @@ export default function BookingProcess() {
   };
 
   useEffect(() => {
-    const segmentWidth = 300 / 2;
+    const segmentWidth = 100 / 3;
+
     Animated.timing(progressAnim, {
       toValue: segmentWidth * (currentPage - 1),
       duration: 300,
@@ -142,37 +167,74 @@ export default function BookingProcess() {
           />
         </>
       );
-    } 
-    
-    // else if (currentPage === 3) {
-    //   return (
-    //     <>
-    //       <Step3 data={lecturerId} />
-    //     </>
-    //   );
-    // }
+    } else if (currentPage === 3) {
+      return (
+        <>
+          <Step3
+            data={lecturerId}
+            preferredDates={preferedDate ? [preferedDate] : []}
+            mode={mode}
+            priority={priority}
+            topic={topic}
+            description={description}
+          />
+        </>
+      );
+    }
   };
 
-  const submitConsultationRequest = async () => {
-    try {
-      const consultationRef = collection(db, "consultations");
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
 
-      await addDoc(consultationRef, {
+  const submitConsultationRequest = async () => {
+    if (
+      !topic.trim() ||
+      !description.trim() ||
+      !preferedDate ||
+      (Array.isArray(preferedDate) && preferedDate.length === 0) ||
+      !mode.trim() ||
+      !priority.trim()
+    ) {
+      Alert.alert("Error", "All fields are required before submitting.");
+      return;
+    }
+
+    try {
+      setLoadingSubmit(true);
+      const consultationRef = collection(db, "consultations");
+      const docRef = await addDoc(consultationRef, {
         lecturer_id: lecturerId,
-        student_id: "3WuducXGLzcsSTjiBKdQ",
-        topic: topic,
-        description: description,
+        student_id: user?.id,
+        topic,
+        description,
         preferredDate: preferedDate,
-        mode: mode,
-        priority: priority,
+        mode,
+        priority,
         status: "pending",
         createdAt: new Date(),
       });
 
-      Alert.alert("Success", "Consultation request submitted successfully.");
+      await addNotification({
+        lecturer_id: lecturerId,
+        message_description: "You have a new consultation request by student",
+        message_text: `New Consultation Request by ${user?.name}`,
+        reciever_type: "lecturer",
+        related_id: docRef.id,
+        related_type: "consultations",
+        user_id: user?.id ?? "",
+      });
+
+      Alert.alert("Success", "Consultation request submitted successfully.", [
+        {
+          text: "OK",
+          onPress: () =>
+            navigation.navigate("Lecturer/Booking-Step3", { lecturerId }),
+        },
+      ]);
     } catch (error) {
       console.error("Error adding consultation:", error);
       Alert.alert("Error", "Failed to submit consultation request.");
+    } finally {
+      setLoadingSubmit(false);
     }
   };
 
@@ -180,13 +242,11 @@ export default function BookingProcess() {
   const handleBack = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
-    } else {
-      navigation.goBack();
     }
   };
 
   const renderPageIndicator = () => {
-    const segmentWidth = 100 / 3;
+    const segmentWidth = 100 / 2;
 
     return (
       <View style={styles.pageIndicatorContainer}>
@@ -214,16 +274,18 @@ export default function BookingProcess() {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
+
       <View style={styles.header}>
         <Ionicons
           name="arrow-back"
           size={24}
           color="black"
-          onPress={handleBack}
+          onPress={() => navigation.goBack()}
         />
-        <Text style={styles.headerTitle}>Request For Consultation</Text>
+        <Text style={styles.headerTitle}>Request Consultation</Text>
         <View style={{ width: 24 }} />
       </View>
+
       <View style={styles.container2}>
         <View style={{ marginTop: 0 }} />
         <ScrollView
@@ -235,38 +297,10 @@ export default function BookingProcess() {
         </ScrollView>
       </View>
       <View style={styles.container3}>
-        <Animated.View
-          style={{
-            width: "95%",
-            position: "absolute",
-            backgroundColor: "#3b3936",
-            padding: 5,
-            bottom: bookingAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [-50, 45],
-            }),
-            left: 16,
-            borderRadius: 100,
-            zIndex: 100,
-            opacity: bookingAnim,
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 14,
-              fontFamily: "CanelaRegular",
-              textAlign: "center",
-              padding: 12,
-            }}
-          >
-            You have a booking with a mentor at this time
-          </Text>
-        </Animated.View>
         {renderPageIndicator()}
         <View
           style={{
-            paddingBottom: Platform.OS === "android" ? 50 : 20,
+            paddingBottom: Platform.OS === "android" ? 50 : 0,
             marginLeft: "auto",
           }}
         >
@@ -288,6 +322,101 @@ export default function BookingProcess() {
           </View>
         </View>
       </View>
+
+      <Modal
+        visible={showConfirmSheet}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowConfirmSheet(false)}
+      >
+        <View
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          {loadingSubmit ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <View
+              style={{
+                width: "90%",
+                backgroundColor: "#fff",
+                padding: 25,
+                borderRadius: 20,
+                shadowColor: "#000",
+                shadowOpacity: 0.2,
+                shadowOffset: { width: 0, height: 3 },
+                shadowRadius: 5,
+                elevation: 5,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontFamily: "LatoBold",
+                  textAlign: "center",
+                  marginBottom: 20,
+                  color: "#333",
+                }}
+              >
+                Confirm Consultation Request
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontFamily: "Lato",
+                  textAlign: "center",
+                  color: "#666",
+                  marginBottom: 25,
+                }}
+              >
+                Do you want to confirm consultation request with{" "}
+                {lecturerData?.name}?
+              </Text>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <TouchableOpacity
+                  style={{
+                    paddingVertical: 12,
+                    backgroundColor: "#aaa",
+                    borderRadius: 50,
+                    width: "45%",
+                    alignItems: "center",
+                  }}
+                  onPress={() => setShowConfirmSheet(false)}
+                >
+                  <Text style={{ color: "#fff", fontSize: 16 }}>No</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    paddingVertical: 12,
+                    backgroundColor: "#3D83F5",
+                    borderRadius: 50,
+                    width: "45%",
+                    alignItems: "center",
+                  }}
+                  onPress={submitConsultationRequest}
+                >
+                  <Text
+                    style={{ color: "#fff", fontSize: 16, fontFamily: "Lato" }}
+                  >
+                    Yes Confirm
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -343,6 +472,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   footer: {
     flexDirection: "row",

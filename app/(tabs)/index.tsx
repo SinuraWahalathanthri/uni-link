@@ -13,7 +13,7 @@ import {
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import AppHeader from "@/components/main/Header";
 import AppointmentCard from "@/components/main/AppointmentCard";
-import { Link } from "expo-router";
+import { Link, useNavigation } from "expo-router";
 import Lecturers from "@/components/home/Lecturers";
 import QuickAccess from "@/components/home/QuickAccess";
 import Events from "@/components/home/Events";
@@ -22,6 +22,11 @@ import { useAuth } from "@/context/AuthContext";
 export default function HomeScreen() {
 
   const { user } = useAuth();
+  const navigation = useNavigation();
+
+  const navigateToSessions = () =>{
+    navigation.navigate("Consultations/ConsultationHistory");
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -69,6 +74,7 @@ export default function HomeScreen() {
                   lineHeight: 19,
                   color: "#1A3C7C",
                 }}
+                onPress={navigateToSessions}
               >
                 See all
               </Text>

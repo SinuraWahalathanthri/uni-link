@@ -10,11 +10,13 @@ import {
   Platform,
   Pressable,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { Ionicons, Entypo, Feather } from "@expo/vector-icons";
 import { Stack, useNavigation } from "expo-router";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { getLecturer } from "@/services/StorageServices";
+import AvatarComponent from "@/components/chat/AvatarComponent";
 
 type LectureItem = {
   id: string;
@@ -64,7 +66,11 @@ const ProfessorProfileScreen = () => {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" style={{ marginTop: 100 }} />
+      </SafeAreaView>
+    );
   }
 
   if (!lecturerData) {
@@ -75,14 +81,17 @@ const ProfessorProfileScreen = () => {
     navigation.navigate("Chat/ChatScreen", { lecturerId });
   };
 
-
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-     
       <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color="black" onPress={() => navigation.goBack()} />
+        <Ionicons
+          name="arrow-back"
+          size={24}
+          color="black"
+          onPress={() => navigation.goBack()}
+        />
         <Text style={styles.headerTitle}>{lecturerData.name}</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -93,66 +102,52 @@ const ProfessorProfileScreen = () => {
             source={require("../../assets/images/main/cover.png")}
             style={styles.coverImage}
           />
-          <Image
-            source={
-              lecturerData.profileImage === "no-image"
-                ? require("../../assets/images/main/lecturer-1.png")
-                : { uri: lecturerData.profileImage }
-            }
+
+          <AvatarComponent
+            imageUrl={lecturerData.profileImage}
+            name={lecturerData.name}
+            size={58}
             style={styles.profileImage}
           />
+
+          <View style={styles.bubbleContainer}>
+            <TouchableOpacity
+              style={styles.bubble}
+              onPress={() => navigateToChat(lecturerId)}
+            >
+              <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.bubble}
+              onPress={() => Linking.openURL(`mailto:${lecturerData.email}`)}
+            >
+              <Ionicons name="mail" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.profileContainer}>
           <Text style={styles.name}>{lecturerData.name}</Text>
           <Text style={styles.title}>{lecturerData.designation}</Text>
           <Text style={styles.department}>{lecturerData.department}</Text>
-          <Text style={styles.faculty}>{lecturerData.faculty}</Text>
-
-          <View style={styles.connectionRow}>
-            <Text style={styles.linkText}>147+ connections</Text>
-            <Text style={styles.mutualText}>Mutual Connections</Text>
-          </View>
-
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.connectBtn}>
-              <Text style={styles.connectText}>Connect</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chatBtn} onPress={() => navigateToChat(lecturerId)}>
-              <Text style={styles.chatText}>Start Chat</Text>
-            </TouchableOpacity>
+            <Text
+              style={[
+                styles.sectionContent,
+                { fontSize: 14, color: "white", textAlign: "center" },
+              ]}
+            >
+              Available
+            </Text>
           </View>
         </View>
 
-      
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Office Hours</Text>
-          {lecturerData.office_hours?.map((slot, index) => (
-            <View key={index}>
-              <Text style={styles.sectionContent}>
-                {slot.day.join(" & ")}: {slot.from} – {slot.to} ({slot.mode})
-              </Text>
-            </View>
-          ))}
-          <View style={styles.locationRow}>
-            <Entypo name="location-pin" size={16} color="red" />
-            <Text style={styles.sectionContent}>{lecturerData.office_location}</Text>
-          </View>
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Courses and Subjects Taught</Text>
-          {lecturerData.linkedSubjects?.map((subject, index) => (
-            <Text key={index} style={styles.sectionContent}>
-              • {subject}
-            </Text>
-          ))}
-        </View>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Biography / About</Text>
           <Text style={styles.sectionContent}>{lecturerData.biography}</Text>
         </View>
       </ScrollView>
-      <View style={{ paddingBottom: Platform.OS === "android" ? 50 : 20 }}>
+      <View style={{ paddingBottom: Platform.OS === "android" ? 50 : 0 }}>
         <TouchableOpacity style={styles.consultBtn} onPress={navigateToConsult}>
           <Text style={styles.consultText}>Request Consultation</Text>
         </TouchableOpacity>
@@ -161,8 +156,28 @@ const ProfessorProfileScreen = () => {
   );
 };
 
-
 const styles = StyleSheet.create({
+  bubbleContainer: {
+    position: "absolute",
+    right: 20,
+    bottom: -20,
+    flexDirection: "row",
+    gap: 10,
+  },
+  bubble: {
+    backgroundColor: "#2675EC",
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -239,9 +254,13 @@ const styles = StyleSheet.create({
     fontFamily: "Lato",
   },
   buttonRow: {
-    flexDirection: "row",
-    gap: 10,
     marginTop: 10,
+    padding: 5,
+    width: 80,
+    borderWidth: 1,
+    borderColor: "#27AE60",
+    borderRadius: 100,
+    backgroundColor: "#27AE60",
   },
   connectBtn: {
     flex: 1,
@@ -283,6 +302,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: "#444",
     fontFamily: "Lato",
+    textAlign: "justify",
   },
   locationRow: {
     flexDirection: "row",
@@ -296,11 +316,11 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     alignItems: "center",
     fontFamily: "LatoBold",
-    
   },
   consultText: {
     color: "#fff",
     fontWeight: "bold",
+    fontFamily: "LatoBold",
   },
 });
 

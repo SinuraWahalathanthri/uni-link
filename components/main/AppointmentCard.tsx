@@ -1,15 +1,16 @@
 import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "expo-router";
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 
 const AppointmentCard = () => {
+  
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card}>
       <View style={styles.topRow}>
-        {/* Profile Info */}
         <View style={styles.profileRow}>
           <Image
-            source={require("../../assets/images/main/lecturer-1.png")} // Replace with actual image
+            source={require("../../assets/images/main/lecturer-1.png")}
             style={styles.avatar}
           />
           <View>
@@ -17,14 +18,10 @@ const AppointmentCard = () => {
             <Text style={styles.role}>Senior Lecturer</Text>
           </View>
         </View>
-
-        {/* Call Icon */}
         <View style={styles.iconButton}>
           <MaterialIcons name="call" color="white" size={20} />
         </View>
       </View>
-
-      {/* Bottom Row */}
       <View style={styles.bottomRow}>
         <View style={styles.iconText}>
           <Feather name="calendar" color="white" size={18} />
@@ -36,7 +33,7 @@ const AppointmentCard = () => {
           <Text style={styles.infoText}>10:00 - 10:30</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -88,14 +85,14 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 20,
-    width:4,
+    width: 4,
     backgroundColor: "#6279bd",
     borderRadius: 10,
   },
   bottomRow: {
     flexDirection: "row",
-    backgroundColor:"#3B57AD",
-    padding:10,
+    backgroundColor: "#3B57AD",
+    padding: 10,
     borderRadius: 8,
     marginTop: 12,
     justifyContent: "space-between",

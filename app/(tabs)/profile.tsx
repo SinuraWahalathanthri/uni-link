@@ -37,13 +37,17 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     try {
       setUser(null);
-      navigation.replace("Login");
+      navigation.replace("(auth)");
     } catch (err) {
       Alert.alert("Error", "Failed to logout. Please try again.");
     } finally {
       setShowLogoutModal(false);
     }
   };
+
+  const navigateToPassword = () =>{
+    navigation.navigate("Profile/ChangePassword");
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -218,6 +222,7 @@ export default function ProfileScreen() {
               justifyContent: "center",
               elevation: 1,
             }}
+            onPress={navigateToPassword}
           >
             <Ionicons name="lock-closed-outline" size={22} color="#ffff" />
             <Text
@@ -270,11 +275,9 @@ export default function ProfileScreen() {
       >
         <View
           style={{
-            flex: 1,
             justifyContent: "center",
             alignItems: "center",
             padding: 20,
-            backgroundColor: "rgba(0,0,0,0.4)",
           }}
         >
           <View

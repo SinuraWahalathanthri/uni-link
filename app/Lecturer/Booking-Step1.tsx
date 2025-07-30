@@ -18,6 +18,7 @@ import { Stack } from "expo-router";
 import CommonStyles from "@/constants/CommonStyles";
 import { useRoute } from "@react-navigation/native";
 import { getLecturer } from "@/services/StorageServices";
+import AvatarComponent from "@/components/chat/AvatarComponent";
 
 type LectureItem = {
   id: string;
@@ -109,14 +110,12 @@ export default function Step1({ data, setTopic, setDescription }: Step1Props) {
               source={require("../../assets/images/main/cover.png")}
               style={styles.coverImage}
             />
-            <Image
-              source={
-                lecturerData.profileImage === "no-image"
-                  ? require("../../assets/images/main/lecturer-1.png")
-                  : { uri: lecturerData.profileImage }
-              }
-              style={styles.profileImage}
-            />
+            <AvatarComponent
+            imageUrl={lecturerData.profileImage}
+            name={lecturerData.name}
+            size={58}
+            style={[styles.profileImage]}
+          />
           </View>
           <View style={styles.profileContainer}>
             <Text style={styles.name}>{lecturerData.name}</Text>

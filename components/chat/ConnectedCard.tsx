@@ -10,25 +10,22 @@ function ConnectedCard({ item, onPress }) {
           <View style={styles.dot2} />
         </View>
         <View style={styles.content}>
-          {/* Title */}
           <View style={[styles.row, { justifyContent: "space-between" }]}>
-            <Text style={styles.cardTitle}>Dr.Sarah Johnsons</Text>
+            <Text style={styles.cardTitle}>{item.name}</Text>
             <Text
               style={[
                 styles.metaTextLight,
                 { marginTop: 5, alignContent: "flex-end", fontSize: 12 },
               ]}
             >
-              4:15 PM
+              {item.lastMessageTime || ""}
             </Text>
           </View>
 
-          {/* Meta Row */}
           <View style={[styles.row, { justifyContent: "space-between" }]}>
             <View style={styles.metaRow}>
-              <Text style={styles.tag}>Lecturer</Text>
-              <Text style={styles.dot}>•</Text>
-              <Text style={styles.metaText}>Computer Science</Text>
+              <Text style={styles.tag}>{item.designation}</Text>
+              <Text style={styles.metaText}>{item.department}</Text>
             </View>
 
             {item.unreadCount > 0 && (
@@ -41,8 +38,7 @@ function ConnectedCard({ item, onPress }) {
           </View>
 
           <Text numberOfLines={2} style={styles.metaTextLight}>
-            Your assignment submission is good, still needs more work to do
-            putha. Dw we can do this together. you got this!!
+            {item.lastMessage || ""}
           </Text>
         </View>
       </View>

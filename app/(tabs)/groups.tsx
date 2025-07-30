@@ -3,6 +3,7 @@ import {
   FlatList,
   Platform,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -18,10 +19,12 @@ import {
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CommonStyles from "@/constants/CommonStyles";
 import AppHeader from "@/components/main/Header";
 import { useNavigation } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
+import { getUserCommunities } from "@/services/StorageServices";
 
 const lectureData = [
   {
@@ -59,7 +62,7 @@ const lectureData = [
   },
 ];
 
-const GroupCard = ({ item,onPress }) => (
+const GroupCard = ({ item, onPress }) => (
   <Pressable style={styles.card} onPress={onPress}>
     <View style={styles.row}>
       <View style={styles.row}>
@@ -67,21 +70,12 @@ const GroupCard = ({ item,onPress }) => (
         <View style={styles.dot2} />
       </View>
       <View style={styles.content}>
-        {/* Title */}
         <View style={[styles.row, { justifyContent: "space-between" }]}>
           <Text style={styles.cardTitle}>
-            Software Design and Analysis Lecture
+           {item.name}
           </Text>
         </View>
-
-        {/* Meta Row */}
         <View style={[styles.row, { justifyContent: "space-between" }]}>
-          {/* <View style={styles.metaRow}>
-            <Text style={styles.tag}>Lecturer</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.metaText}>Computer Science</Text>
-          </View> */}
-
           {item.unreadCount > 0 && (
             <View style={{ marginTop: 6, marginRight: 4 }}>
               <View style={styles.unreadBadge}>
@@ -95,14 +89,13 @@ const GroupCard = ({ item,onPress }) => (
           numberOfLines={2}
           style={[styles.metaTextLight, { marginTop: -4 }]}
         >
-          Official channel for Software Design and Analysis Exam Preparation{" "}
-          {"\n"}( Resources and Notes )
+          {item.description}
         </Text>
 
         <View style={styles.row}>
           <View style={styles.metaRow}>
             <Feather name="users" size={14} color={"#777777"} />
-            <Text style={styles.tag}>245 members</Text>
+            <Text style={styles.tag}>  {item.member_count || (item.members?.length || 0)} members</Text>
           </View>
           <View style={[styles.metaRow, { marginLeft: 10 }]}>
             <Feather name="message-circle" size={14} color={"#777777"} />
@@ -114,7 +107,7 @@ const GroupCard = ({ item,onPress }) => (
   </Pressable>
 );
 
-const DiscoverCard = ({ item,onPress }) => (
+const DiscoverCard = ({ item, onPress }) => (
   <Pressable style={styles.card} onPress={onPress}>
     <View style={styles.row}>
       <View style={styles.row}>
@@ -154,46 +147,51 @@ const DiscoverCard = ({ item,onPress }) => (
   </Pressable>
 );
 
-const myGroupsData = [
-  {
-    id: "1",
-    name: "AI Club",
-    image: require("../../assets/images/hackthonImage.png"),
-  },
-  {
-    id: "2",
-    name: "Music Society",
-    image: require("../../assets/images/hackthonImage.png"),
-  },
-];
 
-const discoverGroupsData = [
-  {
-    id: "3",
-    name: "Photography Club",
-    image: require("../../assets/images/hackthonImage.png"),
-  },
-  {
-    id: "4",
-    name: "Game Dev Circle",
-    image: require("../../assets/images/hackthonImage.png"),
-  },
-];
 
 export default function GroupsScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [activeTab, setActiveTab] = useState<"myGroups" | "discover">(
     "myGroups"
   );
-
-  const selectedData =
-    activeTab === "myGroups" ? myGroupsData : discoverGroupsData;
-  const renderCard = activeTab === "myGroups" ? GroupCard : DiscoverCard;
-
+  const [searchText, setSearchText] = useState("");
+  const { user } = useAuth();
   const navigation = useNavigation();
-  const navigateToChat = () => {
-    navigation.navigate("Groups/GroupDetails");
+
+  const [myGroups, setMyGroups] = useState<any[]>([]);
+  const [discoverGroups, setDiscoverGroups] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchCommunities = async () => {
+    setRefreshing(true);
+    const userGroups = await getUserCommunities(user.id);
+    setMyGroups(userGroups);
+
+    const allCommunities = await getUserCommunities(null);
+    const nonMemberGroups = allCommunities.filter(
+      (c: any) => !c.members.some((m: any) => m.id === user?.id)
+    );
+    setDiscoverGroups(nonMemberGroups);
+
+    setRefreshing(false);
   };
+
+  useEffect(() => {
+    fetchCommunities();
+  }, []);
+
+  const navigateToChat = (community: any) => {
+    navigation.navigate("Groups/GroupDetails", { communityId: community.id });
+  };
+
+  const filteredData = (
+    activeTab === "myGroups" ? myGroups : discoverGroups
+  ).filter(
+    (group) =>
+      group.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      group.description.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <View
@@ -217,7 +215,7 @@ export default function GroupsScreen() {
             </Text>
           </View>
 
-          <View
+          <TouchableOpacity
             style={{
               paddingVertical: 10,
               paddingHorizontal: 10,
@@ -226,11 +224,9 @@ export default function GroupsScreen() {
             }}
           >
             <MaterialIcons name="add" color={"#ffffff"} size={24} />
-          </View>
+          </TouchableOpacity>
         </View>
-
         <View style={{ marginTop: 16 }} />
-
         <View style={styles.container2}>
           <TouchableOpacity
             style={[styles.tab, activeTab === "myGroups" && styles.activeTab]}
@@ -260,9 +256,7 @@ export default function GroupsScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
         <View style={{ marginTop: -16 }} />
-
         <View style={CommonStyles.inputContainer}>
           <View
             style={[
@@ -277,25 +271,50 @@ export default function GroupsScreen() {
               placeholderTextColor="#777"
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
+              value={searchText}
+              onChangeText={setSearchText}
             />
           </View>
         </View>
+
         <View style={{ flex: 1 }}>
           <FlatList
-            data={selectedData}
-           
+            data={filteredData}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={fetchCommunities}
+              />
+            }
             contentContainerStyle={{
               paddingBottom: Platform.OS === "ios" ? 80 : 40,
             }}
-            renderItem={({ item }) => React.createElement(renderCard, { item, onPress: navigateToChat })}
+            renderItem={({ item }) =>
+              activeTab === "myGroups" ? (
+                <GroupCard item={item} onPress={() => navigateToChat(item)} />
+              ) : (
+                <DiscoverCard
+                  item={item}
+                  onPress={() => navigateToChat(item)}
+                />
+              )
+            }
+            ListEmptyComponent={
+              <Text
+                style={{ textAlign: "center", color: "#888", marginTop: 20 }}
+              >
+                No groups found
+              </Text>
+            }
           />
         </View>
       </View>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   joinButton: {
     flexDirection: "row",
