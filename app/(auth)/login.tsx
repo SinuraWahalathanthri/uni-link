@@ -1,0 +1,283 @@
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
+import React, { useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
+import { router, useNavigation } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
+
+type Student = {
+  id: string;
+  name?: string;
+  email?: string;
+  status?: string;
+  password?: string;
+  nic?: string;
+  otpExpiry?: { toDate: () => Date };
+};
+
+const LoginScreen = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const navigation = useNavigation();
+  const { setUser } = useAuth();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Missing Fields", "Please enter email and password/OTP.");
+      return;
+    }
+
+    try {
+      const q = query(collection(db, "students"), where("email", "==", email));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        Alert.alert("Login Failed", "Student not found.");
+        return;
+      }
+
+      const docData = snapshot.docs[0];
+      const student: Student = { id: docData.id, ...docData.data() };
+
+      if (student.status === "Deactive") {
+        Alert.alert("Account Deactivated", "Please contact administration.");
+        return;
+      }
+
+      if (student.password) {
+        if (student.password === password) {
+          Alert.alert("Login Successful", `Welcome ${student.name}`);
+          setUser(student);
+          router.replace("/(tabs)");
+        } else {
+          Alert.alert("Incorrect Password", "Please try again.");
+        }
+      } else {
+        const otpExpiry = student.otpExpiry?.toDate();
+        const now = new Date();
+        if (password === student.nic && otpExpiry && now < otpExpiry) {
+          Alert.alert("OTP Login Successful", `Welcome ${student.name}`);
+          setUser(student);
+          router.replace("/(tabs)");
+        } else {
+          Alert.alert("Invalid OTP", "OTP is incorrect or expired.");
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      Alert.alert("Error", "Something went wrong during login.");
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text style={styles.title}>
+            Login to <Text style={{ color: "#3D83F5" }}>UniLink</Text>
+          </Text>
+          <Text style={styles.subTitle}>
+            Sign in to your university account
+          </Text>
+
+          <Image
+            source={require("../../assets/images/student.png")}
+            style={styles.image}
+          />
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>University email</Text>
+            <View
+              style={[
+                styles.emailInputWrapper,
+                emailFocused && styles.focusedInput,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color={"#777"}
+              />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter your university email"
+                placeholderTextColor={"grey"}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+          </View>
+
+          <View style={styles.passwordContainer}>
+            <Text style={styles.label}>Password</Text>
+            <View
+              style={[
+                styles.passwordInputWrapper,
+                passwordFocused && styles.focusedInput,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color={"#777"}
+              />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter password or OTP"
+                placeholderTextColor={"grey"}
+                secureTextEntry
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+                value={password}
+                onChangeText={setPassword}
+              />
+            </View>
+          </View>
+
+          {/* Login */}
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Powered by XZORA Devlabs</Text>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default LoginScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    paddingHorizontal: 16,
+  },
+  title: {
+    marginTop: 40,
+    fontFamily: "LatoBlack",
+    fontSize: 24,
+    lineHeight: 29,
+  },
+  subTitle: {
+    marginTop: 6,
+    fontFamily: "Lato",
+    fontSize: 16,
+    lineHeight: 19,
+    color: "#1C1E24",
+  },
+  image: {
+    width: 300,
+    height: 300,
+    alignSelf: "center",
+    marginTop: 20,
+  },
+  inputContainer: {
+    marginTop: 24,
+  },
+  label: {
+    fontFamily: "Lato",
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#505050",
+  },
+  emailInputWrapper: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#CFCFCF",
+    borderRadius: 8,
+    flexDirection: "row",
+    width: "100%",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  passwordContainer: {
+    marginTop: 15,
+  },
+  passwordInputWrapper: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#CFCFCF",
+    borderRadius: 8,
+    flexDirection: "row",
+    width: "100%",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  textInput: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: "Lato",
+    marginLeft: 8,
+    paddingVertical: 0,
+    flex: 1,
+  },
+  loginSection: {
+    marginTop: 45,
+  },
+  loginButton: {
+    backgroundColor: "#3D83F5",
+    paddingVertical: 12,
+    borderRadius: 100,
+    marginTop: 45,
+    alignItems: "center",
+  },
+  loginButtonText: {
+    fontFamily: "Lato",
+    fontSize: 16,
+    lineHeight: 19,
+    color: "white",
+  },
+  forgotText: {
+    fontFamily: "LatoBold",
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#3D83F5",
+    textAlign: "center",
+    marginTop: 16,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footerText: {
+    fontFamily: "LatoBold",
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#D0D0D0",
+    textAlign: "center",
+    marginBottom: 18,
+  },
+  focusedInput: {
+    borderColor: "#3D83F5",
+    borderWidth: 2,
+  },
+});

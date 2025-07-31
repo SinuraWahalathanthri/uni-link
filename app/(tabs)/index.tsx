@@ -1,75 +1,179 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  RefreshControl,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import AppHeader from "@/components/main/Header";
+import { useNavigation } from "expo-router";
+import Lecturers from "@/components/home/Lecturers";
+import QuickAccess from "@/components/home/QuickAccess";
+import Events from "@/components/home/Events";
+import { useAuth } from "@/context/AuthContext";
+import { isToday } from "date-fns";
+import { getLecturer, getYourConsultations } from "@/services/StorageServices";
+import ConsultationCard from "../Consultations/Card";
+import AppointmentCard from "@/components/main/AppointmentCard";
+import Announcements from "@/components/home/Announcements";
 
 export default function HomeScreen() {
+  const { user } = useAuth();
+  const navigation = useNavigation();
+
+  const [todayConsultations, setTodayConsultations] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchTodayConsultations = async () => {
+    if (!user?.id) return;
+
+    try {
+      const data = await getYourConsultations(user.id);
+      const withLecturers = await Promise.all(
+        data.map(async (c) => {
+          try {
+            const lecturer = await getLecturer(c.lecturer_id);
+            return { ...c, lecturer };
+          } catch (error) {
+            console.warn("Failed to fetch lecturer for consultation:", c.id);
+            return { ...c, lecturer: null };
+          }
+        })
+      );
+
+      const todays = withLecturers.filter((c) => {
+        const status = c.status?.toLowerCase();
+        const isValidStatus = status === "accepted" || status === "started";
+        const isScheduledToday =
+          c.scheduledDateTime?.toDate && isToday(c.scheduledDateTime.toDate());
+
+        return isValidStatus && isScheduledToday;
+      });
+
+      const latestAppointment = todays.sort(
+        (a, b) => b.scheduledDateTime.toDate() - a.scheduledDateTime.toDate()
+      )[0];
+
+      setTodayConsultations(latestAppointment ? [latestAppointment] : []);
+    } catch (error) {
+      console.error("Failed to fetch consultations", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchTodayConsultations();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchTodayConsultations();
+  }, [user]);
+
+  const navigateToSessions = () => {
+    navigation.navigate("Consultations/ConsultationHistory");
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: Platform.OS === "ios" ? 0 : 36 },
+        ]}
+      >
+        <AppHeader />
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: Platform.OS === "ios" ? 80 : 40,
+          }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <View style={{ flex: 1 }}>
+            <View>
+              <Text style={styles.title}>Hi there, {user?.name}!</Text>
+              <Text style={styles.subTitle}>Every day is a new beginning.</Text>
+            </View>
+
+            <Events />
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 24,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "LatoBold",
+                  fontSize: 18,
+                  lineHeight: 20,
+                  color: "#000000",
+                }}
+              >
+                Upcoming Sessions
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "Lato",
+                  fontSize: 15,
+                  lineHeight: 19,
+                  color: "#1A3C7C",
+                }}
+                onPress={navigateToSessions}
+              >
+                See all
+              </Text>
+            </View>
+            {todayConsultations.length > 0 ? (
+              todayConsultations.map((consult, index) => (
+                <View key={consult.id || index} style={{ marginTop: 16 }}>
+                  <AppointmentCard item={consult} />
+                </View>
+              ))
+            ) : (
+              <Text style={styles.subTitle}>No Appointment Today</Text>
+            )}
+
+            {/* Quick Access */}
+            {/* <QuickAccess /> */}
+
+            {/* Lecturers */}
+            {/* <Lecturers /> */}
+            <Announcements/>
+          </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    paddingHorizontal: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontFamily: "LatoBold",
+    fontSize: 24,
+    lineHeight: 29,
+    fontWeight: "600",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subTitle: {
+    marginTop: 6,
+    fontFamily: "Lato",
+    fontSize: 16,
+    lineHeight: 19,
+    color: "#6B6B6B",
   },
 });

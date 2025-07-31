@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "650386703526",
+    "project_id": "uni-link-3fce5",
+    "storage_bucket": "uni-link-3fce5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:650386703526:android:36f9453da2b5cc0daca067",
+        "android_client_info": {
+          "package_name": "com.unilink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6kjLroRkCyewgC6CH__QRP-9n07gZvKo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
