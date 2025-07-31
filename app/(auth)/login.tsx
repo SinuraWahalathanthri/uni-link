@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -105,7 +106,7 @@ const LoginScreen = () => {
           />
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>University Email or Student ID</Text>
+            <Text style={styles.label}>University email</Text>
             <View
               style={[
                 styles.emailInputWrapper,
@@ -119,7 +120,8 @@ const LoginScreen = () => {
               />
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter your email or ID"
+                placeholder="Enter your university email"
+                placeholderTextColor={"grey"}
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
                 value={email}
@@ -129,7 +131,7 @@ const LoginScreen = () => {
           </View>
 
           <View style={styles.passwordContainer}>
-            <Text style={styles.label}>Password or OTP</Text>
+            <Text style={styles.label}>Password</Text>
             <View
               style={[
                 styles.passwordInputWrapper,
@@ -144,6 +146,7 @@ const LoginScreen = () => {
               <TextInput
                 style={styles.textInput}
                 placeholder="Enter password or OTP"
+                placeholderTextColor={"grey"}
                 secureTextEntry
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
@@ -154,11 +157,9 @@ const LoginScreen = () => {
           </View>
 
           {/* Login */}
-          <View style={styles.loginSection}>
-            <Pressable style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Login</Text>
-            </Pressable>
-          </View>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     alignSelf: "center",
-    marginTop: 50,
+    marginTop: 20,
   },
   inputContainer: {
     marginTop: 24,
@@ -210,11 +211,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: "#CFCFCF",
-    borderRadius: 100,
+    borderRadius: 8,
     flexDirection: "row",
     width: "100%",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 8,
   },
   passwordContainer: {
     marginTop: 15,
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: "#CFCFCF",
-    borderRadius: 100,
+    borderRadius: 8,
     flexDirection: "row",
     width: "100%",
     alignItems: "center",
@@ -245,6 +246,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3D83F5",
     paddingVertical: 12,
     borderRadius: 100,
+    marginTop: 45,
     alignItems: "center",
   },
   loginButtonText: {

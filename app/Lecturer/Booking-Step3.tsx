@@ -82,25 +82,16 @@ export default function Step3({
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" style={{ marginTop: 100 }} />
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" style={{ marginTop: 300 }} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Ionicons
-          name="arrow-back"
-          size={24}
-          color="black"
-          onPress={navigateToHome}
-        />
-        <Text style={styles.headerTitle}>Request Sent Successfully!!</Text>
-        <View style={{ width: 24 }} />
-      </View>
       <ScrollView>
         <View>
           <Image
@@ -145,7 +136,12 @@ export default function Step3({
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      <View style={{ paddingBottom: Platform.OS === "android" ? 50 : 30 }}>
+        <TouchableOpacity style={styles.consultBtn} onPress={navigateToHome}>
+          <Text style={styles.consultText}>Navigate to Home</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -195,7 +191,7 @@ const styles = StyleSheet.create({
   ///
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "white",
   },
   header: {
     flexDirection: "row",
@@ -209,7 +205,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    marginLeft:20,
+    marginLeft: 20,
     fontFamily: "LatoBold",
   },
   coverImage: {
@@ -329,20 +325,23 @@ const styles = StyleSheet.create({
   consultBtn: {
     marginHorizontal: 20,
     marginVertical: 10,
-    backgroundColor: "#2675EC",
+    backgroundColor: "#f6faffff",
     padding: 16,
     borderRadius: 100,
+    borderWidth: 1,
+    borderColor: "#325fe8ff",
     alignItems: "center",
     fontFamily: "LatoBold",
   },
   consultText: {
-    color: "#fff",
+    color: "#325fe8ff",
     fontWeight: "bold",
+    fontFamily: "LatoBold",
   },
   notificationContainer: {
     paddingHorizontal: 20,
     gap: 20,
-    marginTop:-10,
+    marginTop: -10,
   },
   topBox: {
     backgroundColor: "#f0fdf4",
@@ -358,7 +357,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#bfdbfe",
     padding: 16,
-    marginTop:-10,
+    marginTop: -10,
     alignItems: "center",
   },
   iconCircleGreen: {

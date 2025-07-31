@@ -37,28 +37,6 @@ function Events() {
 
   const navigation = useNavigation<any>();
 
-  //   const addEvent = async () => {
-  //   try {
-  //     await addDoc(collection(db, "events"), {
-  //       createdAt: Timestamp.fromDate(new Date()),
-  //       created_by: "353q957587q395",
-  //       date: Timestamp.fromDate(new Date()),
-  //       description:
-  //         "An intensive workshop on Artificial Intelligence. This Bootcamp will give students to connect with professionals in the Ai Industry and help them refurnish there skills in Machine Learning and Artificial Intelligence.",
-  //       hostedBy: "Department of Computing",
-  //       imageUrl:
-  //         "https://www.zriadventures.com/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fdjhua1jv9%2Fimage%2Fupload%2Fv1707574917%2FIMG_20230901_125113_bc7ec07ead.webp&w=3840&q=75",
-  //       location: "Auditorium A",
-  //       status: "Active",
-  //       time: "10:00 AM",
-  //       title: "Nagrak Expedition Hike'25",
-  //     });
-
-  //     console.log("Event added successfully!");
-  //   } catch (error) {
-  //     console.error("Error adding event:", error);
-  //   }
-  // };
 
   useEffect(() => {
     const unsubscribe = onSnapshot(

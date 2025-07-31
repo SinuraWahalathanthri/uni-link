@@ -1,9 +1,15 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useNavigation } from "expo-router";
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, TouchableOpacity, View } from "react-native";
 
 function QuickAccess() {
+
+  const navigation = useNavigation();
+  const navigateToSupport = () =>{
+    navigation.navigate("(tabs)/chat");
+  }
+
   return (
     <>
       <View
@@ -26,7 +32,6 @@ function QuickAccess() {
       </View>
 
       <View style={{ width: "100%" }}>
-        {/* Row 1 */}
         <View
           style={{
             width: "100%",
@@ -35,7 +40,6 @@ function QuickAccess() {
             marginTop: 16,
           }}
         >
-          {/* Column 1 */}
           <Pressable
             style={{
               flex: 1,
@@ -105,7 +109,6 @@ function QuickAccess() {
             </Text>
           </Pressable>
 
-          {/* Column 2 */}
           <Pressable
             style={{
               flex: 1,
@@ -181,8 +184,7 @@ function QuickAccess() {
             marginTop: 10,
           }}
         >
-          {/* Column 1 */}
-          <Pressable
+          <TouchableOpacity
             style={{
               flex: 1,
               paddingHorizontal: 16,
@@ -192,6 +194,7 @@ function QuickAccess() {
               borderWidth: 1,
               borderColor: "#CFCFCF",
             }}
+            onPress={navigateToSupport}
           >
             <View
               style={{
@@ -225,7 +228,7 @@ function QuickAccess() {
             >
               Get Help
             </Text>
-          </Pressable>
+          </TouchableOpacity>
           {/* Column 2 */}
           <Link href={"/resources"} asChild>
             <Pressable

@@ -1,12 +1,18 @@
 import React from "react";
 import { Image, Pressable, Text, View, StyleSheet } from "react-native";
+import AvatarComponent from "./AvatarComponent";
 
 function ConnectedCard({ item, onPress }) {
   return (
     <Pressable style={styles.card} onPress={onPress}>
       <View style={styles.row}>
         <View style={styles.row}>
-          <Image source={item.image} style={styles.profileImage} />
+            <AvatarComponent
+            imageUrl={item.profileImage}
+            name={item.name}
+            size={58}
+            style={styles.profileImage}
+          />
           <View style={styles.dot2} />
         </View>
         <View style={styles.content}>
@@ -18,28 +24,33 @@ function ConnectedCard({ item, onPress }) {
                 { marginTop: 5, alignContent: "flex-end", fontSize: 12 },
               ]}
             >
-              {item.lastMessageTime || ""}
+              {/* {item.lastMessageTime || ""} */}
             </Text>
           </View>
 
           <View style={[styles.row, { justifyContent: "space-between" }]}>
             <View style={styles.metaRow}>
               <Text style={styles.tag}>{item.designation}</Text>
-              <Text style={styles.metaText}>{item.department}</Text>
+              {/* <Text style={styles.metaText}>{item.department}</Text> */}
             </View>
 
             {item.unreadCount > 0 && (
-              <View style={{ marginTop: 6, marginRight: 4 }}>
+              <View style={{ marginTop: -10, marginRight: 4 }}>
                 <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>2</Text>
+                  <Text style={styles.unreadText}>{item.unreadCount}</Text>
                 </View>
               </View>
             )}
           </View>
 
-          <Text numberOfLines={2} style={styles.metaTextLight}>
+          <View style={{flexDirection:"row", justifyContent:"space-between"}}>
+            <Text numberOfLines={2} style={styles.metaTextLight}>
             {item.lastMessage || ""}
           </Text>
+           <Text numberOfLines={2} style={styles.metaTextLight}>
+            {item.time || ""}
+          </Text>
+          </View>
         </View>
       </View>
     </Pressable>

@@ -1,32 +1,82 @@
-import { Image } from "expo-image";
+import React, { useEffect, useState } from "react";
 import {
-  FlatList,
   Platform,
-  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  RefreshControl,
 } from "react-native";
 
-import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import AppHeader from "@/components/main/Header";
-import AppointmentCard from "@/components/main/AppointmentCard";
-import { Link, useNavigation } from "expo-router";
+import { useNavigation } from "expo-router";
 import Lecturers from "@/components/home/Lecturers";
 import QuickAccess from "@/components/home/QuickAccess";
 import Events from "@/components/home/Events";
 import { useAuth } from "@/context/AuthContext";
+import { isToday } from "date-fns";
+import { getLecturer, getYourConsultations } from "@/services/StorageServices";
+import ConsultationCard from "../Consultations/Card";
+import AppointmentCard from "@/components/main/AppointmentCard";
+import Announcements from "@/components/home/Announcements";
 
 export default function HomeScreen() {
-
   const { user } = useAuth();
   const navigation = useNavigation();
 
-  const navigateToSessions = () =>{
+  const [todayConsultations, setTodayConsultations] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchTodayConsultations = async () => {
+    if (!user?.id) return;
+
+    try {
+      const data = await getYourConsultations(user.id);
+      const withLecturers = await Promise.all(
+        data.map(async (c) => {
+          try {
+            const lecturer = await getLecturer(c.lecturer_id);
+            return { ...c, lecturer };
+          } catch (error) {
+            console.warn("Failed to fetch lecturer for consultation:", c.id);
+            return { ...c, lecturer: null };
+          }
+        })
+      );
+
+      const todays = withLecturers.filter((c) => {
+        const status = c.status?.toLowerCase();
+        const isValidStatus = status === "accepted" || status === "started";
+        const isScheduledToday =
+          c.scheduledDateTime?.toDate && isToday(c.scheduledDateTime.toDate());
+
+        return isValidStatus && isScheduledToday;
+      });
+
+      const latestAppointment = todays.sort(
+        (a, b) => b.scheduledDateTime.toDate() - a.scheduledDateTime.toDate()
+      )[0];
+
+      setTodayConsultations(latestAppointment ? [latestAppointment] : []);
+    } catch (error) {
+      console.error("Failed to fetch consultations", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchTodayConsultations();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchTodayConsultations();
+  }, [user]);
+
+  const navigateToSessions = () => {
     navigation.navigate("Consultations/ConsultationHistory");
-  }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -43,13 +93,18 @@ export default function HomeScreen() {
           contentContainerStyle={{
             paddingBottom: Platform.OS === "ios" ? 80 : 40,
           }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <View style={{ flex: 1 }}>
             <View>
               <Text style={styles.title}>Hi there, {user?.name}!</Text>
               <Text style={styles.subTitle}>Every day is a new beginning.</Text>
             </View>
+
             <Events />
+
             <View
               style={{
                 flexDirection: "row",
@@ -65,7 +120,7 @@ export default function HomeScreen() {
                   color: "#000000",
                 }}
               >
-                Upcomming Sessions
+                Upcoming Sessions
               </Text>
               <Text
                 style={{
@@ -79,16 +134,22 @@ export default function HomeScreen() {
                 See all
               </Text>
             </View>
-
-            <View>
-              <AppointmentCard />
-            </View>
+            {todayConsultations.length > 0 ? (
+              todayConsultations.map((consult, index) => (
+                <View key={consult.id || index} style={{ marginTop: 16 }}>
+                  <AppointmentCard item={consult} />
+                </View>
+              ))
+            ) : (
+              <Text style={styles.subTitle}>No Appointment Today</Text>
+            )}
 
             {/* Quick Access */}
-            <QuickAccess />
+            {/* <QuickAccess /> */}
 
             {/* Lecturers */}
-            <Lecturers />
+            {/* <Lecturers /> */}
+            <Announcements/>
           </View>
         </ScrollView>
       </View>
@@ -101,17 +162,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     paddingHorizontal: 16,
-  },
-  image: {
-    width: 148,
-    height: 65,
-    alignSelf: "center",
-    marginTop: 14,
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    alignSelf: "center",
   },
   title: {
     fontFamily: "LatoBold",
@@ -126,6 +176,4 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: "#6B6B6B",
   },
-
-  
 });

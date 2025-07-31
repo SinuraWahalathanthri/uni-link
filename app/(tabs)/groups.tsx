@@ -1,90 +1,47 @@
-import { Image } from "expo-image";
+import LetterComponent from "@/components/chat/LetterComponent";
+import AppHeader from "@/components/main/Header";
+import CommonStyles from "@/constants/CommonStyles";
+import { useAuth } from "@/context/AuthContext";
+import { db } from "@/services/FirebaseConfig";
+import { Feather, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "expo-router";
 import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
-  RefreshControl,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
-import {
-  Feather,
-  FontAwesome,
-  Ionicons,
-  MaterialCommunityIcons,
-  MaterialIcons,
-} from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import CommonStyles from "@/constants/CommonStyles";
-import AppHeader from "@/components/main/Header";
-import { useNavigation } from "expo-router";
-import { useAuth } from "@/context/AuthContext";
-import { getUserCommunities } from "@/services/StorageServices";
 
-const lectureData = [
-  {
-    id: "1",
-    name: "University Exam Schedule Released",
-    user_type: "Exam",
-    Department: "1 day ago",
-    msg: "4 min read",
-    timeAgo: "1 day ago",
-    unreadCount: 2,
-    readTime: "4 min read",
-    image: require("../../assets/images/hackthonImage.png"),
-  },
-  {
-    id: "2",
-    name: "University Exam Schedule Released",
-    user_type: "Exam",
-    Department: "1 day ago",
-    msg: "4 min read",
-    timeAgo: "1 day ago",
-    unreadCount: 0,
-    readTime: "4 min read",
-    image: require("../../assets/images/hackthonImage.png"),
-  },
-  {
-    id: "3",
-    name: "University Exam Schedule Released",
-    user_type: "Exam",
-    Department: "1 day ago",
-    msg: "4 min read",
-    timeAgo: "1 day ago",
-    unreadCount: 0,
-    readTime: "4 min read",
-    image: require("../../assets/images/hackthonImage.png"),
-  },
-];
-
-const GroupCard = ({ item, onPress }) => (
+const GroupCard = ({ item, onPress, timeAgo }) => (
   <Pressable style={styles.card} onPress={onPress}>
     <View style={styles.row}>
       <View style={styles.row}>
-        <Image source={item.image} style={styles.profileImage} />
-        <View style={styles.dot2} />
+        <LetterComponent
+          imageUrl={undefined}
+          type={item.type}
+          style={undefined}
+        />
       </View>
       <View style={styles.content}>
         <View style={[styles.row, { justifyContent: "space-between" }]}>
-          <Text style={styles.cardTitle}>
-           {item.name}
-          </Text>
+          <Text style={styles.cardTitle}>{item.name}</Text>
         </View>
-        <View style={[styles.row, { justifyContent: "space-between" }]}>
-          {item.unreadCount > 0 && (
-            <View style={{ marginTop: 6, marginRight: 4 }}>
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>2</Text>
-              </View>
-            </View>
-          )}
-        </View>
-
         <Text
           numberOfLines={2}
           style={[styles.metaTextLight, { marginTop: -4 }]}
@@ -95,102 +52,183 @@ const GroupCard = ({ item, onPress }) => (
         <View style={styles.row}>
           <View style={styles.metaRow}>
             <Feather name="users" size={14} color={"#777777"} />
-            <Text style={styles.tag}>  {item.member_count || (item.members?.length || 0)} members</Text>
+            <Text style={styles.tag}>
+              {" "}
+              {item.memberCount || item.members?.length || 0} members
+            </Text>
           </View>
           <View style={[styles.metaRow, { marginLeft: 10 }]}>
-            <Feather name="message-circle" size={14} color={"#777777"} />
-            <Text style={styles.tag}>5 mins ago</Text>
+            {item.hasUnread && (
+              <>
+                <Feather name="message-circle" size={14} color={"#777777"} />
+                <Text style={styles.tag}>{timeAgo(item.latestMessage)}</Text>
+              </>
+            )}
           </View>
         </View>
       </View>
     </View>
   </Pressable>
 );
-
-const DiscoverCard = ({ item, onPress }) => (
-  <Pressable style={styles.card} onPress={onPress}>
-    <View style={styles.row}>
-      <View style={styles.row}>
-        <Image source={item.image} style={styles.profileImage} />
-        <View style={styles.dot2} />
-      </View>
-      <View style={styles.content}>
-        {/* Title */}
-        <View style={[styles.row, { justifyContent: "space-between" }]}>
-          <Text style={styles.cardTitle}>
-            Software Design and Analysis Lecture
-          </Text>
-        </View>
-
-        <View style={[styles.row, { justifyContent: "space-between" }]}></View>
-
-        <Text
-          numberOfLines={2}
-          style={[styles.metaTextLight, { marginTop: -4 }]}
-        >
-          Official channel for Software Design and Analysis Exam Preparation{" "}
-          {"\n"}( Resources and Notes )
-        </Text>
-
-        <View style={[styles.row, { justifyContent: "space-between" }]}>
-          <View style={styles.metaRow}>
-            <Feather name="users" size={14} color={"#777777"} />
-            <Text style={styles.tag}>245 members</Text>
-          </View>
-          <TouchableOpacity style={styles.joinButton} onPress={onPress}>
-            <Feather name="user-plus" size={14} color={"#fafafa"} />
-            <Text style={styles.tagWhite}>Join</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  </Pressable>
-);
-
-
 
 export default function GroupsScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
-  const [activeTab, setActiveTab] = useState<"myGroups" | "discover">(
-    "myGroups"
-  );
+  const [myGroups, setMyGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [filteredGroups, setFilteredGroups] = useState([]);
   const { user } = useAuth();
   const navigation = useNavigation();
 
-  const [myGroups, setMyGroups] = useState<any[]>([]);
-  const [discoverGroups, setDiscoverGroups] = useState<any[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchCommunities = async () => {
-    setRefreshing(true);
-    const userGroups = await getUserCommunities(user.id);
-    setMyGroups(userGroups);
 
-    const allCommunities = await getUserCommunities(null);
-    const nonMemberGroups = allCommunities.filter(
-      (c: any) => !c.members.some((m: any) => m.id === user?.id)
+  const fetchMyGroups = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      const cmSnapshot = await getDocs(collection(db, "community_members"));
+
+      const myDocs = cmSnapshot.docs
+        .map((docSnap) => {
+          const data = docSnap.data();
+          if (
+            Array.isArray(data.members) &&
+            data.members.some((m) => m.user_id === user.id)
+          ) {
+            return {
+              communityId: data.comm_unity_id,
+              memberCount: data.members.length,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      const communityIds = myDocs.map((doc) => doc!.communityId);
+      const memberCountMap = Object.fromEntries(
+        myDocs.map((doc) => [doc!.communityId, doc!.memberCount])
+      );
+
+      const [lastSeenMap, latestMsgMap] = await Promise.all([
+        fetchAllLastSeen(user.id),
+        fetchLatestMessages(communityIds),
+      ]);
+
+      const communityData = await Promise.all(
+        communityIds.map(async (cid) => {
+          const snap = await getDoc(doc(db, "communities", cid));
+          if (!snap.exists()) return null;
+
+          const lastSeen = lastSeenMap[cid];
+          const latestMessage = latestMsgMap[cid];
+          const hasUnread =
+            latestMessage && (!lastSeen || latestMessage > lastSeen);
+
+          return {
+            id: snap.id,
+            ...snap.data(),
+            hasUnread,
+            latestMessage,
+            memberCount: memberCountMap[cid] || 0,
+          };
+        })
+      );
+
+      const sortedGroups = communityData.filter(Boolean).sort((a, b) => {
+        const timeA = a.latestMessage ? a.latestMessage.getTime() : 0;
+        const timeB = b.latestMessage ? b.latestMessage.getTime() : 0;
+        return timeB - timeA;
+      });
+
+      setMyGroups(sortedGroups);
+      setFilteredGroups(sortedGroups);
+    } catch (err) {
+      console.error("Error loading groups:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchMyGroups();
+  }, [fetchMyGroups]);
+
+  const fetchAllLastSeen = async (userId) => {
+    const q = query(
+      collection(db, "community_last_seen"),
+      where("adminId", "==", userId)
     );
-    setDiscoverGroups(nonMemberGroups);
+    const snapshot = await getDocs(q);
 
-    setRefreshing(false);
+    const map: Record<string, Date | undefined> = {};
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      map[data.communityId] = data.lastSeen?.toDate();
+    });
+    return map;
+  };
+
+  const fetchLatestMessages = async (communityIds) => {
+    if (communityIds.length === 0) return {};
+
+    const q = query(
+      collection(db, "community_messages"),
+      where("community_id", "in", communityIds)
+    );
+
+    const snapshot = await getDocs(q);
+    const latestMap: Record<string, Date> = {};
+
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const time = data.timestamp?.toDate();
+
+      if (
+        !latestMap[data.community_id] ||
+        time > latestMap[data.community_id]
+      ) {
+        latestMap[data.community_id] = time;
+      }
+    });
+    return latestMap;
+  };
+
+  const navigateToChat = (group) => {
+    (navigation as any).navigate("Groups/GroupScreen", {
+      data: group,
+      communityId: group.id,
+      type: group.type,
+      name: group.name,
+      memberCount: group.memberCount,
+    });
+  };
+
+  const timeAgo = (timestamp) => {
+    if (!timestamp) return "No messages";
+    const now = new Date();
+    const diff = (now - timestamp) / 1000;
+
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
+    return `${Math.floor(diff / 86400)} days ago`;
   };
 
   useEffect(() => {
-    fetchCommunities();
-  }, []);
-
-  const navigateToChat = (community: any) => {
-    navigation.navigate("Groups/GroupDetails", { communityId: community.id });
-  };
-
-  const filteredData = (
-    activeTab === "myGroups" ? myGroups : discoverGroups
-  ).filter(
-    (group) =>
-      group.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchText.toLowerCase())
-  );
+    if (!searchText.trim()) {
+      setFilteredGroups(myGroups);
+    } else {
+      const lowerSearch = searchText.toLowerCase();
+      setFilteredGroups(
+        myGroups.filter(
+          (group) =>
+            group.name?.toLowerCase().includes(lowerSearch) ||
+            group.description?.toLowerCase().includes(lowerSearch)
+        )
+      );
+    }
+  }, [searchText, myGroups]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -201,13 +239,7 @@ export default function GroupsScreen() {
         ]}
       >
         <AppHeader />
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Groups</Text>
             <Text style={styles.subTitle}>
@@ -215,48 +247,18 @@ export default function GroupsScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={{
-              paddingVertical: 10,
-              paddingHorizontal: 10,
-              backgroundColor: "#3D83F5",
-              borderRadius: 4,
-            }}
-          >
-            <MaterialIcons name="add" color={"#ffffff"} size={24} />
-          </TouchableOpacity>
-        </View>
-        <View style={{ marginTop: 16 }} />
-        <View style={styles.container2}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "myGroups" && styles.activeTab]}
-            onPress={() => setActiveTab("myGroups")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "myGroups" && styles.activeTabText,
-              ]}
+           <View
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 10,
+                backgroundColor: "#3D83F5",
+                borderRadius: 4,
+              }}
             >
-              My Groups
-            </Text>
-          </TouchableOpacity>
+              <MaterialIcons name="people" color={"#ffffff"} size={24} />
+            </View>
+        </View>
 
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "discover" && styles.activeTab]}
-            onPress={() => setActiveTab("discover")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "discover" && styles.activeTabText,
-              ]}
-            >
-              Discover Groups
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={{ marginTop: -16 }} />
         <View style={CommonStyles.inputContainer}>
           <View
             style={[
@@ -264,11 +266,11 @@ export default function GroupsScreen() {
               emailFocused && CommonStyles.focusedInput,
             ]}
           >
-            <MaterialCommunityIcons name="magnify" size={20} color={"#777"} />
+            <MaterialCommunityIcons name="magnify" size={20} color="#777" />
             <TextInput
               style={CommonStyles.textInput}
-              placeholder="Search groups and communities"
-              placeholderTextColor="#777"
+              placeholder="Search Communities"
+              placeholderTextColor="#777777"
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
               value={searchText}
@@ -277,39 +279,29 @@ export default function GroupsScreen() {
           </View>
         </View>
 
-        <View style={{ flex: 1 }}>
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#3D83F5"
+            style={{ marginTop: 50 }}
+          />
+        ) : (
           <FlatList
-            data={filteredData}
+            data={filteredGroups}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={fetchCommunities}
-              />
-            }
             contentContainerStyle={{
               paddingBottom: Platform.OS === "ios" ? 80 : 40,
             }}
-            renderItem={({ item }) =>
-              activeTab === "myGroups" ? (
-                <GroupCard item={item} onPress={() => navigateToChat(item)} />
-              ) : (
-                <DiscoverCard
-                  item={item}
-                  onPress={() => navigateToChat(item)}
-                />
-              )
-            }
-            ListEmptyComponent={
-              <Text
-                style={{ textAlign: "center", color: "#888", marginTop: 20 }}
-              >
-                No groups found
-              </Text>
-            }
+            renderItem={({ item }) => (
+              <GroupCard
+                item={item}
+                onPress={() => navigateToChat(item)}
+                timeAgo={timeAgo}
+              />
+            )}
           />
-        </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -328,12 +320,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 100,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   container2: {
     flexDirection: "row",
     backgroundColor: "#f0f0f0",
     borderRadius: 8,
     padding: 4,
-    marginVertical: 10,
+    marginTop: 10,
   },
   tab: {
     flex: 1,
@@ -374,15 +371,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
     padding: 14,
-    marginTop: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 0.8,
+    borderColor: "#ececec",
+    borderRadius: 12,
+    marginTop: 12,
+    backgroundColor: "#fff",
+    elevation: 1,
   },
   cardTitle: {
     fontFamily: "LatoBold",
@@ -489,45 +484,5 @@ const styles = StyleSheet.create({
     height: 60,
     alignSelf: "center",
     borderRadius: 100,
-  },
-  subTitle: {
-    marginTop: 6,
-    fontFamily: "Lato",
-    fontSize: 16,
-    lineHeight: 19,
-    color: "#6B6B6B",
-  },
-  inputContainer: {
-    marginTop: 8,
-  },
-  label: {
-    fontFamily: "Lato",
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#505050",
-  },
-  emailInputWrapper: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#CFCFCF",
-    borderRadius: 100,
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  textInput: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "Lato",
-    marginLeft: 8,
-    paddingVertical: 0,
-    flex: 1,
-    color: "#000000",
-  },
-  focusedInput: {
-    borderColor: "#3D83F5",
-    borderWidth: 1,
   },
 });

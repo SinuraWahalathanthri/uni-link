@@ -8,213 +8,210 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { getLecturers } from "@/services/StorageServices";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "@/services/FirebaseConfig";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useAuth } from "@/context/AuthContext";
 
 type LectureItem = {
   id: string;
   name: string;
   designation: string;
-  profileImage: string;
-  biography: string;
-  department: string;
+  profileImage?: string;
+  biography?: string;
+  department?: string;
   email: string;
-  faculty: string;
-  google_meet_link: string;
-  linkedSubjects: string[];
-  office_hours: {
-    day: string[];
-    from: string;
-    to: string;
-    mode: string;
-  }[];
-  office_location: string;
+  faculty?: string;
 };
 
-function Lecturers() {
+const Lecturers = () => {
+  const navigation = useNavigation<any>();
+  const { user } = useAuth();
   const [lecturers, setLecturers] = useState<LectureItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const navigation = useNavigation<any>();
-
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "lecturers"), (snapshot) => {
-      const lecturerList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as LectureItem[];
+    const fetchLecturers = async () => {
+      try {
+        const lecturerList = await getLecturers("", user);
+        setLecturers(lecturerList.slice(0, 5)); // top 5 lecturers
+      } catch (error) {
+        console.error("Error loading lecturers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setLecturers(lecturerList);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    fetchLecturers();
+  }, [user]);
 
   const navigateToProfile = (item: LectureItem) => {
-    navigation.navigate("Lecturer/LecturerProfile", {
-      lecturerId: item.id,
-    });
+    navigation.navigate("Lecturer/LecturerProfile", { lecturerId: item.id });
+  };
+
+  const navigateToChat = (lecturerId: string) => {
+    navigation.navigate("Chat/ChatScreen", { lecturerId });
+  };
+
+  const navigateToConsultation = (lecturerId: string) => {
+    navigation.navigate("Consultations/RequestScreen", { lecturerId });
   };
 
   const LectureCard = ({ item }: { item: LectureItem }) => (
-    <TouchableOpacity
-      style={styles.lectureCard}
-      onPress={() => navigateToProfile(item)}
-    >
-      <Image
-        source={
-          item.profileImage === null
-            ? require("../../assets/images/main/lecturer-1.png")
-            : { uri: item.profileImage }
-        }
-        style={styles.lectureImage}
-      />
-      <View style={styles.lectureTextContainer}>
-        <Text style={styles.lectureNameText}>{item.name}</Text>
-        <Text style={styles.lectureTitleText}>{item.designation}</Text>
+    <View style={styles.lectureCard}>
+      <TouchableOpacity style={{ flex: 1 }} onPress={() => navigateToProfile(item)}>
+        <Image
+          source={
+            item.profileImage
+              ? { uri: item.profileImage }
+              : require("../../assets/images/main/lecturer-1.png")
+          }
+          style={styles.lectureImage}
+        />
+        <View style={styles.overlay} />
+        <View style={styles.lectureTextContainer}>
+          <Text numberOfLines={1} style={styles.lectureNameText}>
+            {item.name}
+          </Text>
+          <Text numberOfLines={1} style={styles.lectureTitleText}>
+            {item.designation}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Action Buttons */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={styles.chatButton}
+          onPress={() => navigateToChat(item.id)}
+        >
+          <MaterialIcons name="chat" size={18} color="#fff" />
+          <Text style={styles.buttonText}>Chat</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.requestButton}
+          onPress={() => navigateToConsultation(item.id)}
+        >
+          <MaterialIcons name="event-available" size={18} color="#fff" />
+          <Text style={styles.buttonText}>Consult</Text>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
     <>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginTop: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: "LatoBold",
-            fontSize: 18,
-            lineHeight: 20,
-            color: "#000000",
-          }}
-        >
-          Connect with lectures
-        </Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.headerTitle}>Connect with Lecturers</Text>
         <Link href={"/staffDirectory"} asChild>
           <Pressable>
-            <Text
-              style={{
-                fontFamily: "Lato",
-                fontSize: 15,
-                lineHeight: 19,
-                color: "#1A3C7C",
-              }}
-            >
-              View all
-            </Text>
+            <Text style={styles.viewAllText}>View all</Text>
           </Pressable>
         </Link>
       </View>
 
-      <View
-        style={{
-          marginTop: 16,
-        }}
-      >
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#3D83F5" />
+      ) : (
         <FlatList
           data={lecturers}
           horizontal
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <LectureCard item={item} />}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 1 }}
+          contentContainerStyle={{ paddingVertical: 16 }}
           ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+          ListEmptyComponent={
+            <Text style={{ color: "#777", marginLeft: 10 }}>No lecturers found</Text>
+          }
         />
-      </View>
+      )}
     </>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  card: {
-    width: 200,
-    height: 246,
-    borderRadius: 16,
-    overflow: "hidden",
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 24,
   },
-  upcomingImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 16,
+  headerTitle: {
+    fontFamily: "LatoBold",
+    fontSize: 18,
+    color: "#000",
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#00000050",
-    borderRadius: 16,
-  },
-  heart: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    width: 25,
-    height: 25,
-    backgroundColor: "#FFFFFF70",
-    borderRadius: 100,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  textContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 12,
-  },
-  dateText: {
+  viewAllText: {
     fontFamily: "Lato",
-    color: "#C9C9C9",
-    fontSize: 16,
-    lineHeight: 19,
+    fontSize: 15,
+    color: "#1A3C7C",
   },
-  titleText: {
-    fontFamily: "Lato",
-    color: "#ffffff",
-    fontSize: 16,
-    lineHeight: 19,
-    marginTop: 5,
-  },
-
-  // Lecuture Card Styles
-
   lectureCard: {
-    width: 195,
-    height: 198,
+    width: 160,
+    height: 230,
     borderRadius: 16,
     overflow: "hidden",
+    backgroundColor: "#f9f9f9",
+    elevation: 2,
   },
   lectureImage: {
     width: "100%",
-    height: "100%",
-    borderRadius: 16,
+    height: 150,
   },
-  lectureOverlay: {
+  overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#00000050",
-    borderRadius: 16,
+    backgroundColor: "#00000040",
+    height: 150,
   },
   lectureTextContainer: {
     position: "absolute",
-    bottom: 20,
-    left: 12,
+    bottom: 10,
+    left: 10,
+    right: 10,
   },
   lectureNameText: {
-    fontFamily: "Lato",
-    color: "#FFFFFF",
+    fontFamily: "LatoBold",
+    color: "#fff",
     fontSize: 16,
-    lineHeight: 19,
   },
   lectureTitleText: {
     fontFamily: "Lato",
-    color: "#EFEFEF",
-    fontSize: 14,
-    lineHeight: 19,
-    marginTop: 5,
+    color: "#e0e0e0",
+    fontSize: 13,
+    marginTop: 3,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  chatButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#3D83F5",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 5,
+  },
+  requestButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#28A745",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    flex: 1,
+  },
+  buttonText: {
+    fontFamily: "LatoBold",
+    color: "#fff",
+    fontSize: 13,
+    marginLeft: 4,
   },
 });
 

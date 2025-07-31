@@ -27,20 +27,17 @@ import { Alert } from "react-native";
 const auth = FIREBASE_AUTH;
 const db = getFirestore(FIREBASE_APP);
 
-export const getLecturers = async (
-  searchText = "",
-  faculty = "",
-  userType = ""
-) => {
+export const getLecturers = async (searchText = "", user) => {
   let q = collection(db, "lecturers");
 
   const conditions = [];
-  if (faculty) conditions.push(where("faculty", "==", faculty));
-  if (userType) conditions.push(where("userType", "==", userType));
+  conditions.push(where("status", "==", "Active"));
 
-  if (conditions.length > 0) {
-    q = query(collection(db, "lecturers"), ...conditions);
+  if (user?.university_id) {
+    conditions.push(where("university_id", "==", user.university_id));
   }
+
+  q = query(q, ...conditions);
 
   const snapshot = await getDocs(q);
 
@@ -73,6 +70,23 @@ export const getLecturer = async (id) => {
   }
 };
 
+export const getUniversity = async (id) => {
+  try {
+    const docRef = doc(db, "university", id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      console.warn("No matching University found");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching University:", error);
+    return null;
+  }
+};
+
 export const getEvent = async (id) => {
   try {
     const docRef = doc(db, "events", id);
@@ -87,6 +101,24 @@ export const getEvent = async (id) => {
   } catch (error) {
     console.error("Error fetching mentor:", error);
     return null;
+  }
+};
+
+export const getYourConsultations = async (studentId) => {
+  try {
+    const consultationsRef = collection(db, "consultations");
+    const q = query(consultationsRef, where("student_id", "==", studentId));
+    const querySnapshot = await getDocs(q);
+
+    const consultations = [];
+    querySnapshot.forEach((doc) => {
+      consultations.push({ id: doc.id, ...doc.data() });
+    });
+
+    return consultations;
+  } catch (error) {
+    console.error("Error fetching consultations:", error);
+    return [];
   }
 };
 
@@ -198,12 +230,18 @@ export const getConnectedLecturers = async (studentId) => {
     const q = query(messagesRef, where("sender_id", "==", studentId));
     const querySnapshot = await getDocs(q);
 
-    const messages = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const messages = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
-    const lecturerIds = [...new Set(messages
-      .map(msg => msg.receiver_id)
-      .filter(id => typeof id === "string" && id.length > 0)
-    )];
+    const lecturerIds = [
+      ...new Set(
+        messages
+          .map((msg) => msg.receiver_id)
+          .filter((id) => typeof id === "string" && id.length > 0)
+      ),
+    ];
 
     if (!lecturerIds.length) return [];
 
@@ -215,9 +253,9 @@ export const getConnectedLecturers = async (studentId) => {
 
     const lecturersSnap = await getDocs(lecturersQuery);
 
-    const lecturers = lecturersSnap.docs.map(doc => {
+    const lecturers = lecturersSnap.docs.map((doc) => {
       const unreadCount = messages.filter(
-        msg => msg.receiver_id === doc.id && !msg.isRead
+        (msg) => msg.receiver_id === doc.id && !msg.isRead
       ).length;
 
       return {
@@ -235,3 +273,85 @@ export const getConnectedLecturers = async (studentId) => {
   }
 };
 
+export const getLecturerChats = async (user) => {
+  if (!user?.id) return [];
+
+  try {
+    const sentMessagesQuery = query(
+      collection(db, "messages"),
+      where("sender_id", "==", user.id)
+    );
+    const sentMessagesSnapshot = await getDocs(sentMessagesQuery);
+
+    const receivedMessagesQuery = query(
+      collection(db, "messages"),
+      where("receiver_id", "==", user.id)
+    );
+    const receivedMessagesSnapshot = await getDocs(receivedMessagesQuery);
+
+    const lecturerIds = new Set();
+    sentMessagesSnapshot.forEach((doc) =>
+      lecturerIds.add(doc.data().receiver_id)
+    );
+    receivedMessagesSnapshot.forEach((doc) =>
+      lecturerIds.add(doc.data().sender_id)
+    );
+
+    if (lecturerIds.size === 0) return [];
+
+    const allLecturers = await getLecturers("", user);
+
+    const chattedLecturers = allLecturers.filter((lec) =>
+      lecturerIds.has(lec.id)
+    );
+
+    const chatList = chattedLecturers
+      .map((lecturer) => {
+        const allMessages = [
+          ...sentMessagesSnapshot.docs
+            .filter((m) => m.data().receiver_id === lecturer.id)
+            .map((m) => m.data()),
+          ...receivedMessagesSnapshot.docs
+            .filter((m) => m.data().sender_id === lecturer.id)
+            .map((m) => m.data()),
+        ];
+
+        if (allMessages.length === 0) return null;
+
+        const sortedMessages = allMessages.sort(
+          (a, b) => b.createdAt.seconds - a.createdAt.seconds
+        );
+        const latestMessage = sortedMessages[0];
+
+        const unreadCount = receivedMessagesSnapshot.docs.filter(
+          (m) =>
+            m.data().sender_id === lecturer.id &&
+            m.data().receiver_id === user.id &&
+            !m.data().isRead
+        ).length;
+
+        return {
+          id: lecturer.id,
+          name: lecturer.name,
+          email: lecturer.email,
+          designation: lecturer.designation,
+          department: lecturer.department,
+          lastMessage: latestMessage.text || "📷 Image",
+          lastMessageTime: latestMessage.createdAt.seconds, 
+          unreadCount,
+          time: new Date(latestMessage.createdAt.seconds * 1000).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+
+    return chatList;
+  } catch (error) {
+    console.error("Error fetching lecturer chats:", error);
+    return [];
+  }
+};

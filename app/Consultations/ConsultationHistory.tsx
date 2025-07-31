@@ -1,243 +1,346 @@
-import { Feather, MaterialIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { Image } from "expo-image";
+import {
+  FlatList,
+  Linking,
+  Platform,
+  Pressable,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import { Stack, useNavigation } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getLecturer,
+  getUserCommunities,
+  getYourConsultations,
+} from "@/services/StorageServices";
+import { format } from "date-fns";
+import ConsultationCard from "./Card";
+import AppointmentCard from "@/components/main/AppointmentCard";
 
-type Session = {
-  id: string;
-  lecturerName: string;
-  role: string;
-  department: string;
-  faculty: string;
-  date: string;
-  time: string;
-  mode: "Physical" | "Online";
-  location?: string;
-  meetingLink?: string;
-  status: "Upcoming" | "Completed" | "Requested";
-};
+type TabType = "accepted" | "pending" | "ended";
 
-const sessions: Session[] = [
-  {
-    id: "1",
-    lecturerName: "Prof. Kamal Ashoka",
-    role: "Senior Lecturer",
-    department: "Computer Science",
-    faculty: "Engineering",
-    date: "Monday, 1 March",
-    time: "10:00 - 10:30",
-    mode: "Physical",
-    location: "Room A-203, Main Campus",
-    status: "Upcoming",
-  },
-  {
-    id: "2",
-    lecturerName: "Dr. Emma White",
-    role: "Lecturer",
-    department: "Mathematics",
-    faculty: "Science",
-    date: "Friday, 26 July",
-    time: "02:00 - 02:30",
-    mode: "Online",
-    meetingLink: "https://meet.google.com/abc-xyz",
-    status: "Completed",
-  },
-  {
-    id: "3",
-    lecturerName: "Dr. Alan Walker",
-    role: "Professor",
-    department: "Biology",
-    faculty: "Medicine",
-    date: "Saturday, 10 Aug",
-    time: "11:00 - 11:30",
-    mode: "Online",
-    meetingLink: "https://meet.google.com/def-uvw",
-    status: "Requested",
-  },
-];
+export default function ConsultationHistory() {
+  const [activeTab, setActiveTab] = useState<TabType>("pending");
+  const [consultations, setConsultations] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const { user } = useAuth();
+  const navigation = useNavigation();
 
-export default function SessionHistoryScreen() {
-  const [selectedTab, setSelectedTab] = useState<"Upcoming" | "Completed" | "Requested">("Upcoming");
+  const fetchConsultations = async () => {
+    if (!user?.id) return;
+    try {
+      const data = await getYourConsultations(user.id);
 
-  const filteredSessions = sessions.filter((item) => item.status === selectedTab);
+      const withLecturers = await Promise.all(
+        data.map(async (c) => {
+          try {
+            const lecturer = await getLecturer(c.lecturer_id);
+            return { ...c, lecturer };
+          } catch {
+            return { ...c, lecturer: null };
+          }
+        })
+      );
 
-  const renderCard = ({ item }: { item: Session }) => (
-    <TouchableOpacity style={styles.card}>
-      {/* Top row */}
-      <View style={styles.topRow}>
-        <View style={styles.profileRow}>
-          <Image
-            source={require("../../assets/images/main/lecturer-1.png")}
-            style={styles.avatar}
-          />
-          <View>
-            <Text style={styles.name}>{item.lecturerName}</Text>
-            <Text style={styles.role}>{item.role}</Text>
-            <Text style={styles.subText}>{item.department} • {item.faculty}</Text>
-          </View>
-        </View>
-        {item.mode === "Online" && (
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => console.log("Joining:", item.meetingLink)}
-          >
-            <MaterialIcons name="videocam" color="white" size={20} />
-          </TouchableOpacity>
-        )}
-      </View>
+      setConsultations(withLecturers);
+    } catch (error) {
+      console.error("Error loading consultations:", error);
+    }
+  };
 
-      {/* Bottom row */}
-      <View style={styles.bottomRow}>
-        <View style={styles.iconText}>
-          <Feather name="calendar" color="white" size={18} />
-          <Text style={styles.infoText}>{item.date}</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.iconText}>
-          <MaterialIcons name="access-time" color="white" size={20} />
-          <Text style={styles.infoText}>{item.time}</Text>
-        </View>
-      </View>
+  useEffect(() => {
+    fetchConsultations();
+  }, []);
 
-      {item.mode === "Physical" && (
-        <Text style={styles.locationText}>📍 {item.location}</Text>
-      )}
-    </TouchableOpacity>
+  console.log(
+    "Pending consultations:",
+    consultations.filter((c) => c.status === "pending")
   );
 
+  const filteredConsultations = consultations
+    .filter((c) => {
+      if (activeTab === "accepted") {
+        return c.status === "accepted" || c.status === "meeting-started";
+      }
+      return c.status === activeTab;
+    })
+    .sort((a, b) => {
+      const dateA = a.scheduledDateTime?.toDate?.() || new Date(0);
+      const dateB = b.scheduledDateTime?.toDate?.() || new Date(0);
+
+      return dateA.getTime() - dateB.getTime();
+    });
+
+  const onRefresh = async () => {
+    await fetchConsultations();
+    setRefreshing(true);
+
+    setRefreshing(false);
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#f9f9f9", padding: 12 }}>
+    <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
+
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </Pressable>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginHorizontal: 16,
+        }}
+      >
+        <View>
+          <Text style={styles.title}>Consultation History</Text>
+          <Text style={styles.subTitle}>
+            Booking history of consultations and physical meets
+          </Text>
+        </View>
+      </View>
+
+      <View style={{ marginTop: 16 }} />
+
       {/* Tabs */}
-      <View style={styles.tabContainer}>
-        {["Upcoming", "Completed", "Requested"].map((tab) => (
+      <View style={styles.container2}>
+        {(["accepted", "pending", "ended"] as TabType[]).map((tab) => (
           <TouchableOpacity
             key={tab}
-            style={[styles.tab, selectedTab === tab && styles.activeTab]}
-            onPress={() => setSelectedTab(tab as any)}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
           >
-            <Text style={[styles.tabText, selectedTab === tab && styles.activeTabText]}>{tab}</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
-
-      {/* List */}
       <FlatList
-        data={filteredSessions}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCard}
-        ListEmptyComponent={<Text style={styles.emptyText}>No sessions</Text>}
+        data={filteredConsultations}
+        keyExtractor={(item) =>
+          item.id ||
+          item.createdAt?.toDate?.().toISOString() ||
+          Math.random().toString()
+        }
+        style={{marginTop:-16}}
+        renderItem={({ item }) => <AppointmentCard item={item} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <>
+            <View>
+              <Ionicons
+                name="calendar-outline"
+                style={{
+                  fontSize: 100,
+                  textAlign: "center",
+                  color: "#e9e9e9ff",
+                }}
+              />
+              <Text
+                style={{
+                  padding: 20,
+                  textAlign: "center",
+                  color: "#c0bebeff",
+                  fontSize: 20,
+                  fontFamily: "LatoBold",
+                }}
+              >
+                No consultations found - Scroll down to Refresh
+              </Text>
+            </View>
+          </>
+        }
+        contentContainerStyle={{ paddingBottom: 20, padding: 16 }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  tabContainer: {
+  header: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 10,
+    alignItems: "center",
+    padding: 16,
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+    paddingTop: Platform.OS === "android" ? 74 : 30,
+  },
+  headerTitle: {
+    fontSize: 20,
+    marginLeft: 20,
+    fontFamily: "LatoBold",
+  },
+  joinButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginTop: 10,
+    marginBottom: 5,
+    backgroundColor: "#16a34a",
+    color: "#fafafa",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 100,
+  },
+  container2: {
+    flexDirection: "row",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    padding: 4,
+    marginVertical: 10,
+    marginHorizontal: 16,
   },
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#e0e0e0",
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
   },
   activeTab: {
-    backgroundColor: "#4E72E3",
+    backgroundColor: "#ffffffff",
   },
   tabText: {
     fontSize: 14,
-    color: "#333",
+    fontWeight: "600",
+    color: "#555",
   },
   activeTabText: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#3D83F5",
+  },
+  unreadBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#3d83f5",
+    borderRadius: 12,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  unreadText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   card: {
-    width: "100%",
+    backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
-    marginVertical: 8,
-    backgroundColor: "#4E72E3",
-    shadowColor: "#00D0FF",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 1, height: 2 },
+    padding: 14,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
     elevation: 2,
+    marginHorizontal: 16,
   },
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  profileRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  name: {
-    color: "#fff",
+  cardTitle: {
+    fontFamily: "LatoBold",
+    fontSize: 16,
+    lineHeight: 29,
     fontWeight: "600",
-    fontSize: 14,
-    fontFamily: "Poppins",
   },
-  role: {
-    color: "#fff",
-    fontSize: 13,
-    opacity: 0.9,
-    fontFamily: "Poppins",
-  },
-  subText: {
-    color: "#fff",
-    fontSize: 12,
-    opacity: 0.8,
-    marginTop: 2,
-    fontFamily: "Poppins",
-  },
-  iconButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    padding: 8,
-    borderRadius: 999,
-  },
-  divider: {
-    height: 20,
-    width: 4,
-    backgroundColor: "#6279bd",
-    borderRadius: 10,
-  },
-  bottomRow: {
+  row: {
     flexDirection: "row",
-    backgroundColor: "#3B57AD",
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 12,
-    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
-  iconText: {
+  image: {
+    width: 148,
+    height: 65,
+    alignSelf: "center",
+    marginTop: 14,
+  },
+  content: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  title: {
+    fontFamily: "LatoBold",
+    fontSize: 24,
+    lineHeight: 29,
+    fontWeight: "600",
+  },
+  subTitle: {
+    marginTop: 6,
+    fontFamily: "Lato",
+    fontSize: 16,
+    lineHeight: 19,
+    color: "#6B6B6B",
+  },
+  metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    flexWrap: "wrap",
+    marginTop: 10,
+    marginBottom: 5,
   },
-  infoText: {
-    color: "#fff",
-    fontSize: 13,
+  tag: {
+    color: "#6B6B6B",
+    fontFamily: "Lato",
+    fontSize: 14,
     marginLeft: 6,
-    fontFamily: "Poppins",
   },
-  locationText: {
-    marginTop: 8,
-    color: "#fff",
-    fontSize: 12,
-    opacity: 0.9,
+  tagWhite: {
+    color: "#fafafa",
+    fontFamily: "LatoBold",
+    fontSize: 14,
+    marginLeft: 6,
   },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 30,
-    color: "#666",
+  metaText: {
+    color: "#6B6B6B",
+    fontFamily: "LatoBold",
+    fontSize: 14,
+  },
+  metaTextLight: {
+    color: "#6B6B6B",
+    fontFamily: "Lato",
+    fontSize: 14,
+  },
+  dot2: {
+    width: 10,
+    height: 10,
+    marginHorizontal: 6,
+    backgroundColor: "#48d562",
+    borderRadius: 10,
+    position: "absolute",
+    top: 50,
+    bottom: 2,
+    right: 2,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    paddingTop: 0,
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    alignSelf: "center",
+    borderRadius: 100,
   },
 });

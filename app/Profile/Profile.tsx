@@ -27,12 +27,14 @@ import QuickAccess from "@/components/home/QuickAccess";
 import Events from "@/components/home/Events";
 import { useAuth } from "@/context/AuthContext";
 import { Modal } from "react-native-paper";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getUniversity } from "@/services/StorageServices";
 
 export default function ProfileScreen() {
   const { user, setUser } = useAuth();
   const navigation = useNavigation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [university, setUniversity] = useState(false);
 
   const handleLogout = () => {
     try {
@@ -45,9 +47,22 @@ export default function ProfileScreen() {
     }
   };
 
-  const navigateToPassword = () =>{
+  const navigateToPassword = () => {
     navigation.navigate("Profile/ChangePassword");
-  }
+  };
+
+  useEffect(() => {
+    const fetchUniversity = async () => {
+      try {
+        const data = await getUniversity(user?.university_id);
+        setUniversity(data);
+      } catch (error) {
+        console.error("Failed to fetch university:", error);
+      }
+    };
+
+    fetchUniversity();
+  }, [user?.university_id]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -112,6 +127,16 @@ export default function ProfileScreen() {
                 marginTop: 4,
               }}
             >
+              {university?.name}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#ffff",
+                fontFamily: "LatoBold",
+                marginTop: 4,
+              }}
+            >
               {user?.degree}
             </Text>
             <TouchableOpacity
@@ -166,6 +191,11 @@ export default function ProfileScreen() {
                 value: user?.institutional_id,
               },
               { icon: "send", label: "Email", value: user?.email },
+              {
+                icon: "university",
+                label: "University",
+                value: university?.name,
+              },
               { icon: "university", label: "Degree", value: user?.degree },
               { icon: "signal", label: "Department", value: user?.department },
               { icon: "mortar-board", label: "Batch", value: user?.batch },

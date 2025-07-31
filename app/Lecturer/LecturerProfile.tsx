@@ -68,6 +68,7 @@ const ProfessorProfileScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{headerShown:false}}/>
         <ActivityIndicator size="large" style={{ marginTop: 100 }} />
       </SafeAreaView>
     );

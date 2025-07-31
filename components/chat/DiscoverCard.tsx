@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
   infoContainer: {
     flex: 1,
     justifyContent: "space-between",
+    marginTop:10
   },
   nameText: {
     fontFamily: "LatoBold",

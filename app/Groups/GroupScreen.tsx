@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -14,78 +14,190 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { Entypo, Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
-import { Stack } from "expo-router";
+import { Stack, useNavigation } from "expo-router";
 import DocumentCard from "@/components/main/DocumentCard";
+import { useRoute } from "@react-navigation/native";
+import {
+  collection,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
+import ImageCard from "@/components/main/ImageCard";
+import LetterComponent from "@/components/chat/LetterComponent";
+import AvatarComponent from "@/components/chat/AvatarComponent";
+import { goBack } from "expo-router/build/global-state/routing";
 
 export default function GroupScreen() {
-  const dummyMessages = [
-    {
-      sender: "mentor",
-      text: "Hi! How can I help you today?",
-      imageUrl: null,
-      time: "2:00 PM",
-    },
-    {
-      sender: "me",
-      text: "Can you explain the last lecture topic?",
-      imageUrl: null,
-      time: "2:00 PM",
-    },
-    {
-      sender: "mentor",
-      text: null,
-      imageUrl: "https://via.placeholder.com/150",
-      time: "2:00 PM",
-    },
-  ];
+  const RenderMessageCard = ({ message, showHeader }) => {
+    const [senderInfo, setSenderInfo] = useState({
+      name: message.user_name,
+      role: "",
+    });
 
-  const MessageCard = ({ name, role, time, message, likes }) => (
+    const formattedTime = message.timestamp?.toDate
+      ? message.timestamp.toDate().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "";
+
+    const fetchUserInfo = async (email) => {
+      try {
+        let q = query(collection(db, "admins"), where("email", "==", email));
+        let snapshot = await getDocs(q);
+
+        if (!snapshot.empty)
+          return { ...snapshot.docs[0].data(), role: "Admin" };
+
+        q = query(collection(db, "lecturers"), where("email", "==", email));
+        snapshot = await getDocs(q);
+
+        if (!snapshot.empty)
+          return { ...snapshot.docs[0].data(), role: "Lecturer" };
+
+        return { name: email, role: "Member" };
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        return { name: email, role: "Member" };
+      }
+    };
+
+    useEffect(() => {
+      const loadInfo = async () => {
+        const info = await fetchUserInfo(message.user_name);
+        setSenderInfo({
+          name: info.name || message.user_name,
+          role: info.role,
+        });
+      };
+      loadInfo();
+    }, [message.user_name]);
+
+    switch (message.type) {
+      case "text":
+        return (
+          <MessageCard
+            name={senderInfo.name}
+            role={senderInfo.role}
+            time={formattedTime}
+            message={message.message_text}
+            likes={message.likes}
+            showHeader={showHeader}
+          />
+        );
+      case "pdf":
+        return (
+          <DocumentCard
+            name={senderInfo.name}
+            role={senderInfo.role}
+            time={formattedTime}
+            fileUrl={message.file_url}
+            profileImage={undefined}
+          />
+        );
+      case "image":
+        return (
+          <ImageCard
+            name={senderInfo.name}
+            role={senderInfo.role}
+            time={formattedTime}
+            imageUrl={message.file_url}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const MessageCard = ({ name, role, time, message, likes, showHeader }) => (
     <View style={styles.messageCard}>
-      <View style={styles.row}>
-        <Image
-          source={require("../../assets/images/profileImage.png")}
-          style={styles.creatorImage}
-        />
-        <View>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.role}>{role}</Text>
+      {showHeader && (
+        <View style={styles.row}>
+          <AvatarComponent
+            imageUrl={undefined}
+            name={name}
+            size={20}
+            style={styles.creatorImage}
+          />
+          <View>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.role}>{role}</Text>
+          </View>
         </View>
-      </View>
+      )}
       <Text style={styles.messageText}>{message}</Text>
       <View style={styles.messageFooter}>
-        <View></View>
-        {likes !== undefined && (
-          <View style={styles.likeBar}>
-            {/* <FontAwesome name="thumbs-up" size={16} color="#fbbf24" /> */}
-            <Text style={{ marginLeft: 5 }}>👍</Text>
-            <Text style={{ marginLeft: 5 }}>{likes}</Text>
-          </View>
-        )}
+        <View />
+
         <Text style={styles.time}>{time}</Text>
       </View>
     </View>
   );
 
+  const route = useRoute();
+  const { data, communityId, type, name, memberCount } = route.params;
+  console.log(data, communityId, type, name, memberCount);
+
+  const [messages, setMessages] = useState([]);
+  const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "community_messages"),
+      where("community_id", "==", communityId),
+      orderBy("timestamp", "asc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedMessages = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setMessages(fetchedMessages);
+    });
+
+    return () => unsubscribe();
+  }, [communityId]);
+
+  const navigation = useNavigation();
+  const navigateToGroupInfo = () => {
+    navigation.navigate("Groups/GroupDetails", { communityId, memberCount });
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <Feather name="arrow-left" size={24} color="#333" />
-
-        <Image
-          source={require("../../assets/images/profileImage.png")}
-          style={styles.profileImage}
+        <Feather
+          name="arrow-left"
+          size={24}
+          color="#333"
+          onPress={() => goBack()}
         />
-        <View style={styles.profileInfo}>
+
+        <LetterComponent imageUrl={undefined} type={type} style={undefined} />
+        <TouchableOpacity
+          style={styles.profileInfo}
+          onPress={navigateToGroupInfo}
+        >
           <View style={styles.row}>
-            <Text style={styles.headerText}>
-              Software Application Development
-            </Text>
+            <Text style={styles.headerText}>{name}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.metaText}>125 participants, 39 online</Text>
+            <Text style={styles.metaText}>{memberCount} participants</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <Feather
           name="more-vertical"
@@ -103,58 +215,32 @@ export default function GroupScreen() {
         <View style={{ backgroundColor: "#dbeafe" }}>
           <View style={styles.announcementBox}>
             <View style={styles.row}>
-              <Text style={styles.headerText}>Announcement</Text>
+              <Text style={styles.headerText}>Group Description</Text>
             </View>
             <View style={styles.row}>
               <Text numberOfLines={1} style={styles.metaText}>
-                Student’s, we will be having a past paper discussion tommorow
-                @5pm, so please stud...
+                {data.description}
               </Text>
             </View>
           </View>
         </View>
         <ScrollView
+          ref={scrollViewRef}
           style={{ flex: 2, padding: 16 }}
           showsVerticalScrollIndicator={false}
         >
-          <MessageCard
-            name="Prof. Michael Chen"
-            role="Lecturer • Mathematics"
-            time="3:19 PM"
-            message="Good Evening Students, We will be having the assessment for the subject next Friday, so make sure everyone studies and keeps. We might have a revision class tomorrow. If anyone has the past papers I shared last month, please share them to me, and I'll publish them in the group. Please refer to the pdfs below and join for the lectures please. Good Day!"
-            likes={12}
-          />
-          <MessageCard
-            name="Prof. Michael Chen"
-            role="Lecturer • Mathematics"
-            time="3:19 PM"
-            message="Oh, and students please tell the others to join this group!"
-            likes={undefined}
-          />
+          {messages.map((msg, index) => {
+            const previousMsg = index > 0 ? messages[index - 1] : null;
+            const isSameSender = previousMsg?.user_id === msg.user_id;
 
-          <DocumentCard />
-
-          <MessageCard
-            name="Prof. Michael Chen"
-            role="Lecturer • Mathematics"
-            time="3:19 PM"
-            message="Oh, and students please tell the others to join this group!"
-            likes={undefined}
-          />
-
-          {/* <View style={styles.pdfCard}>
-            <Image
-              source={require("../../assets/images/profileImage.png")}
-              style={styles.pdfImage}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.pdfTitle}>
-                Introduction to Software Design and Analysis - The basic
-                Fundamentals - Conducted by Prof. Michael Chen
-              </Text>
-              <Text style={styles.pdfDetails}>5 pages • 227 KB • pdf</Text>
-            </View>
-          </View> */}
+            return (
+              <RenderMessageCard
+                key={msg.id}
+                message={msg}
+                showHeader={!isSameSender}
+              />
+            );
+          })}
         </ScrollView>
       </ImageBackground>
 
@@ -188,12 +274,18 @@ const styles = StyleSheet.create({
   },
   messageCard: {
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 10,
-    marginVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginVertical: 5,
     elevation: 2,
     borderWidth: 1,
     borderColor: "#E8E8E8",
+    maxWidth: "100%",
+    alignSelf: "flex-start",
+    shadowColor: "#000",
+    shadowOpacity: 0.02,
+    shadowOffset: { width: 0, height: 1 },
   },
   name: {
     fontWeight: "bold",
@@ -213,7 +305,7 @@ const styles = StyleSheet.create({
     fontFamily: "Lato",
     lineHeight: 23,
     marginTop: 10,
-    padding: 5,
+    marginLeft: 5,
   },
   messageFooter: {
     flexDirection: "row",

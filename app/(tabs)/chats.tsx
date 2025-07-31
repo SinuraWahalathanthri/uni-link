@@ -3,6 +3,7 @@ import {
   FlatList,
   Platform,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -20,7 +21,11 @@ import React, { useEffect, useState } from "react";
 import CommonStyles from "@/constants/CommonStyles";
 import AppHeader from "@/components/main/Header";
 import { Link, useNavigation } from "expo-router";
-import { getConnectedLecturers, getLecturers } from "@/services/StorageServices";
+import {
+  getConnectedLecturers,
+  getLecturerChats,
+  getLecturers,
+} from "@/services/StorageServices";
 import ConnectedCard from "@/components/chat/ConnectedCard";
 import DiscoverCard from "@/components/chat/DiscoverCard";
 import { ActivityIndicator, Modal } from "react-native-paper";
@@ -36,7 +41,7 @@ const Discover = ({ item, onPress }) => (
 
 export default function ChatScreen() {
   const navigation = useNavigation();
-  const {user} = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"connected" | "discover">(
     "connected"
   );
@@ -49,33 +54,42 @@ export default function ChatScreen() {
   const [selectedUserType, setSelectedUserType] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [connectedLecturers, setConnectedLecturers] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchFilteredLecturers = async () => {
+    const lecturerList = await getLecturers(searchText);
+    setLecturers(lecturerList);
+  };
+
+  const fetchConnected = async () => {
+    const chats = await getLecturerChats(user);
+    setConnectedLecturers(chats);
+  };
 
   useEffect(() => {
-    const fetchFilteredLecturers = async () => {
-      setLoading(true);
-      const lecturerList = await getLecturers(
-        searchText,
-        selectedFaculty,
-        selectedUserType
-      );
-      setLecturers(lecturerList);
-      setLoading(false);
-    };
     fetchFilteredLecturers();
   }, [searchText, selectedFaculty, selectedUserType]);
 
+  useEffect(() => {
+    fetchConnected();
+  }, []);
 
-useEffect(() => {
-  const fetchData = async () => {
-    const lecturers = await getConnectedLecturers(user?.id);
-    setConnectedLecturers(lecturers);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (activeTab === "connected") {
+      await fetchConnected();
+    } else {
+      await fetchFilteredLecturers();
+    }
+    setRefreshing(false);
   };
 
-  fetchData();
-}, []);
-
   const renderCard = activeTab === "connected" ? Connected : Discover;
-  const navigateToChat = () => navigation.navigate("Chat/ChatScreen");
+  const dataToRender =
+    activeTab === "connected" ? connectedLecturers : lecturers;
+  const navigateToChat = (lecturer) => {
+    navigation.navigate("Chat/ChatScreen", { lecturerId: lecturer.id });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -100,16 +114,7 @@ useEffect(() => {
                 Chat and connect with your lecturers here
               </Text>
             </View>
-            <View
-              style={{
-                paddingVertical: 10,
-                paddingHorizontal: 10,
-                backgroundColor: "#3D83F5",
-                borderRadius: 4,
-              }}
-            >
-              <MaterialIcons name="add" color={"#ffffff"} size={24} />
-            </View>
+            
           </View>
 
           <View style={{ marginTop: 16 }} />
@@ -170,29 +175,44 @@ useEffect(() => {
                 onChangeText={setSearchText}
               />
 
-              <MaterialIcons
+              {/* <MaterialIcons
                 onPress={() => setFilterVisible(true)}
                 name="filter-list"
                 size={24}
                 color="#9b9b9bff"
-              />
+              /> */}
             </View>
           </View>
         </View>
-         <View style={{ flex: 1 }}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#3D83F5" />
-          ) : (
-            <FlatList
-              data={lecturers}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: Platform.OS === "ios" ? 80 : 40 }}
-              renderItem={({ item }) =>
-                React.createElement(renderCard, { item, onPress: navigateToChat })
-              }
-            />
-          )}
+        <View style={{ flex: 1 }}>
+          <FlatList
+            data={dataToRender}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingBottom: Platform.OS === "ios" ? 80 : 40,
+            }}
+            renderItem={({ item }) =>
+              React.createElement(renderCard, {
+                item,
+                onPress: () => navigateToChat(item),
+              })
+            }
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ItemSeparatorComponent={() => (
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: "#E0E0E0",
+                  marginHorizontal: 10,
+                  marginTop:10,
+                  marginBottom:-6
+                }}
+              />
+            )}
+          />
         </View>
       </View>
 
@@ -204,7 +224,7 @@ useEffect(() => {
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Filter Lecturers</Text>
 
-          <Text style={styles.sectionTitle}>Faculty</Text>
+          <Text style={styles.sectionTitle}>Department</Text>
           {["Engineering", "Science", "Business"].map((faculty) => (
             <TouchableOpacity
               key={faculty}
@@ -215,20 +235,6 @@ useEffect(() => {
               onPress={() => setSelectedFaculty(faculty)}
             >
               <Text>{faculty}</Text>
-            </TouchableOpacity>
-          ))}
-
-          <Text style={styles.sectionTitle}>User Type</Text>
-          {["Lecturer", "Staff"].map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[
-                styles.option,
-                selectedUserType === type && styles.selectedOption,
-              ]}
-              onPress={() => setSelectedUserType(type)}
-            >
-              <Text>{type}</Text>
             </TouchableOpacity>
           ))}
 
@@ -254,6 +260,8 @@ const styles = StyleSheet.create({
   bottomModal: {
     justifyContent: "flex-end",
     margin: 0,
+    zIndex: 100,
+    position: "absolute",
   },
   modalContent: {
     backgroundColor: "white",
@@ -283,6 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3D83F5",
     padding: 12,
     borderRadius: 8,
+    marginBottom: 55,
     marginTop: 16,
     alignItems: "center",
   },

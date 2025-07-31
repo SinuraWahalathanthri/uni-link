@@ -27,27 +27,44 @@ import QuickAccess from "@/components/home/QuickAccess";
 import Events from "@/components/home/Events";
 import { useAuth } from "@/context/AuthContext";
 import { Modal } from "react-native-paper";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getUniversity } from "@/services/StorageServices";
 
 export default function ProfileScreen() {
   const { user, setUser } = useAuth();
   const navigation = useNavigation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [university, setUniversity] = useState(null);
 
   const handleLogout = () => {
     try {
       setUser(null);
       navigation.replace("(auth)");
     } catch (err) {
-      Alert.alert("Error", "Failed to logout. Please try again.");
+      Alert.alert("Error", "Failed to log out. Please try again.");
     } finally {
       setShowLogoutModal(false);
     }
   };
 
-  const navigateToPassword = () =>{
+  const navigateToPassword = () => {
     navigation.navigate("Profile/ChangePassword");
-  }
+  };
+
+  useEffect(() => {
+    if (!user?.university_id) return;
+
+    const fetchUniversity = async () => {
+      try {
+        const data = await getUniversity(user.university_id);
+        setUniversity(data);
+      } catch (error) {
+        console.error("Failed to fetch university:", error);
+      }
+    };
+
+    fetchUniversity();
+  }, [user?.university_id]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -112,7 +129,7 @@ export default function ProfileScreen() {
                 marginTop: 4,
               }}
             >
-              {user?.degree}
+              {university?.name}
             </Text>
             <TouchableOpacity
               style={{

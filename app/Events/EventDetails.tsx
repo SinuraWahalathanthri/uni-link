@@ -283,7 +283,7 @@ const EventDetails = () => {
           </Text>
         </View>
 
-        {coords && (
+        {/* {coords && (
           <View
             style={{
               height: 500,
@@ -309,7 +309,7 @@ const EventDetails = () => {
               />
             </MapView>
           </View>
-        )}
+        )} */}
       </ScrollView>
       <View
         style={{

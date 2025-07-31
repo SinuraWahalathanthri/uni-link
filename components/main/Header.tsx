@@ -1,42 +1,54 @@
-import React from "react";
-import { Image, View, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Image, View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
-import { TouchableOpacity } from "react-native";
 import { useAuth } from "@/context/AuthContext";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
 
 export default function AppHeader() {
   const navigation = useNavigation();
-
-  const navigateToProfile = () => {
-    navigation.navigate("Profile/Profile");
-  };
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const navigateToProfile = () => navigation.navigate("Profile/Profile");
+  const navigateToNotification = () => navigation.navigate("Notifications/Notifications");
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const q = query(
+      collection(db, "notifications"),
+      where("user_id", "==", user.id),
+      where("receiver_type", "==", "student"), 
+      where("is_read", "==", false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUnreadCount(snapshot.size);
+    });
+
+    return () => unsubscribe();
+  }, [user?.id]);
 
   return (
-    <View
-      style={{
-        width: "100%",
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 20,
-      }}
-    >
+    <View style={styles.container}>
       <Image
         source={require("../../assets/images/instituteLogo.png")}
-        style={styles.image}
+        style={styles.logo}
       />
 
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 16,
-          marginTop: 20,
-          alignItems: "center",
-        }}
-      >
-        <MaterialCommunityIcons name="magnify" size={24} />
-        <MaterialCommunityIcons name="bell-outline" size={24} />
+      <View style={styles.rightSection}>
+        <TouchableOpacity onPress={navigateToNotification} style={styles.iconWrapper}>
+          <MaterialCommunityIcons name="bell-outline" size={24} />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         <TouchableOpacity>
           <Image
@@ -55,65 +67,47 @@ export default function AppHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "white",
-    paddingHorizontal: 16,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingHorizontal: 10,
   },
-  image: {
+  logo: {
     width: 148,
     height: 65,
-    alignSelf: "center",
     marginTop: 14,
+  },
+  rightSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginTop: 20,
+  },
+  iconWrapper: {
+    position: "relative",
   },
   profileImage: {
     width: 40,
     height: 40,
-    alignSelf: "center",
-    borderRadius:100,
-  },
-  title: {
-    fontFamily: "LatoBold",
-    fontSize: 24,
-    lineHeight: 29,
-    fontWeight: "600",
-  },
-  subTitle: {
-    marginTop: 6,
-    fontFamily: "Lato",
-    fontSize: 16,
-    lineHeight: 19,
-    color: "#6B6B6B",
-  },
-  inputContainer: {
-    marginTop: 8,
-  },
-  label: {
-    fontFamily: "Lato",
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#505050",
-  },
-  emailInputWrapper: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#CFCFCF",
     borderRadius: 100,
-    flexDirection: "row",
-    width: "100%",
+  },
+  badge: {
+    position: "absolute",
+    right: -5,
+    top: -5,
+    backgroundColor: "red",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    paddingHorizontal: 3,
   },
-  textInput: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "Lato",
-    marginLeft: 8,
-    paddingVertical: 0,
-    flex: 1,
-  },
-  focusedInput: {
-    borderColor: "#3D83F5",
-    borderWidth: 1,
+  badgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "bold",
   },
 });

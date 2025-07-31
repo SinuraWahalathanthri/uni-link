@@ -39,6 +39,8 @@ import * as DocumentPicker from "expo-document-picker";
 import axios from "axios";
 import { goBack } from "expo-router/build/global-state/routing";
 import { useAuth } from "@/context/AuthContext";
+import * as ImageManipulator from "expo-image-manipulator";
+import AvatarComponent from "@/components/chat/AvatarComponent";
 
 type Message = {
   id: string;
@@ -56,15 +58,18 @@ const CLOUDINARY_URL_BASE = "https://api.cloudinary.com/v1_1/dudwypfcf";
 const IMAGE_UPLOAD_PRESET = "unilink";
 const PDF_UPLOAD_PRESET = "unilink-docs";
 
-
-
 export default function ChatScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { lecturerId } = route.params as { lecturerId: string };
-  const {user} = useAuth();
+  const { user } = useAuth();
 
-  const [lecturerData, setLecturerData] = useState<{ id: string; name?: string; designation?: string; department?: string } | null>(null);
+  const [lecturerData, setLecturerData] = useState<{
+    id: string;
+    name?: string;
+    designation?: string;
+    department?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
@@ -175,7 +180,14 @@ export default function ChatScreen() {
 
     if (!result.canceled) {
       setLoading(true);
-      const uploadedUrl = await uploadFileToCloudinary(result.assets[0]);
+
+      const compressed = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      const uploadedUrl = await uploadFileToCloudinary(compressed, true);
       if (uploadedUrl) setImageUrl(uploadedUrl);
       setLoading(false);
     }
@@ -234,8 +246,10 @@ export default function ChatScreen() {
         </TouchableOpacity>
 
         <Pressable onPress={navigateToProfile}>
-          <Image
-            source={require("../../assets/images/profileImage.png")}
+          <AvatarComponent
+            imageUrl={lecturerData?.profileImage}
+            name={lecturerData?.name}
+            size={20}
             style={styles.profileImage}
           />
         </Pressable>
@@ -250,10 +264,10 @@ export default function ChatScreen() {
             <Text style={styles.metaText}>{lecturerData?.department}</Text>
           </View>
         </Pressable>
-
+        {/* 
         <TouchableOpacity onPress={() => Linking.openURL("tel:0774872229")}>
           <Feather name="phone" size={22} color="#333" style={styles.icon} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <Feather
           name="more-vertical"
@@ -488,7 +502,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 4,
-    marginLeft:-10,
+    marginLeft: -10,
   },
   badge: {
     backgroundColor: "#1E88E5",
