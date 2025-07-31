@@ -57,22 +57,36 @@ export default function ChatScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchFilteredLecturers = async () => {
-    const lecturerList = await getLecturers(searchText);
-    setLecturers(lecturerList);
+    try {
+      setLoading(true);
+      const lecturerList = await getLecturers(searchText);
+      setLecturers(lecturerList);
+    } catch (error) {
+      console.error("Failed to fetch lecturers:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchConnected = async () => {
-    const chats = await getLecturerChats(user);
-    setConnectedLecturers(chats);
+    try {
+      setLoading(true);
+      const chats = await getLecturerChats(user);
+      setConnectedLecturers(chats);
+    } catch (error) {
+      console.error("Failed to fetch connected lecturers:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchFilteredLecturers();
-  }, [searchText, selectedFaculty, selectedUserType]);
-
-  useEffect(() => {
-    fetchConnected();
-  }, []);
+    if (activeTab === "connected") {
+      fetchConnected();
+    } else {
+      fetchFilteredLecturers();
+    }
+  }, [activeTab, searchText, selectedFaculty, selectedUserType]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -87,6 +101,7 @@ export default function ChatScreen() {
   const renderCard = activeTab === "connected" ? Connected : Discover;
   const dataToRender =
     activeTab === "connected" ? connectedLecturers : lecturers;
+
   const navigateToChat = (lecturer) => {
     navigation.navigate("Chat/ChatScreen", { lecturerId: lecturer.id });
   };
@@ -114,7 +129,6 @@ export default function ChatScreen() {
                 Chat and connect with your lecturers here
               </Text>
             </View>
-            
           </View>
 
           <View style={{ marginTop: 16 }} />
@@ -207,8 +221,8 @@ export default function ChatScreen() {
                   height: 1,
                   backgroundColor: "#E0E0E0",
                   marginHorizontal: 10,
-                  marginTop:10,
-                  marginBottom:-6
+                  marginTop: 10,
+                  marginBottom: -6,
                 }}
               />
             )}

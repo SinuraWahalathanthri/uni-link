@@ -25,6 +25,8 @@ import {
 import { format } from "date-fns";
 import ConsultationCard from "./Card";
 import AppointmentCard from "@/components/main/AppointmentCard";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
 
 type TabType = "accepted" | "pending" | "ended";
 
@@ -35,31 +37,40 @@ export default function ConsultationHistory() {
   const { user } = useAuth();
   const navigation = useNavigation();
 
-  const fetchConsultations = async () => {
-    if (!user?.id) return;
-    try {
-      const data = await getYourConsultations(user.id);
-
-      const withLecturers = await Promise.all(
-        data.map(async (c) => {
-          try {
-            const lecturer = await getLecturer(c.lecturer_id);
-            return { ...c, lecturer };
-          } catch {
-            return { ...c, lecturer: null };
-          }
-        })
-      );
-
-      setConsultations(withLecturers);
-    } catch (error) {
-      console.error("Error loading consultations:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchConsultations();
-  }, []);
+    if (!user?.id) return;
+
+    const q = query(
+      collection(db, "consultations"),
+      where("student_id", "==", user.id)
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      try {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const withLecturers = await Promise.all(
+          data.map(async (c) => {
+            try {
+              const lecturer = await getLecturer(c.lecturer_id);
+              return { ...c, lecturer };
+            } catch {
+              return { ...c, lecturer: null };
+            }
+          })
+        );
+
+        setConsultations(withLecturers);
+      } catch (error) {
+        console.error("Error fetching consultations:", error);
+      }
+    });
+
+    return () => unsubscribe(); // cleanup
+  }, [user]);
 
   console.log(
     "Pending consultations:",
@@ -80,11 +91,9 @@ export default function ConsultationHistory() {
       return dateA.getTime() - dateB.getTime();
     });
 
-  const onRefresh = async () => {
-    await fetchConsultations();
+  const onRefresh = () => {
     setRefreshing(true);
-
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   return (
@@ -142,7 +151,7 @@ export default function ConsultationHistory() {
           item.createdAt?.toDate?.().toISOString() ||
           Math.random().toString()
         }
-        style={{marginTop:-16}}
+        style={{ marginTop: -16 }}
         renderItem={({ item }) => <AppointmentCard item={item} />}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

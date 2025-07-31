@@ -20,6 +20,8 @@ import { getLecturer, getYourConsultations } from "@/services/StorageServices";
 import ConsultationCard from "../Consultations/Card";
 import AppointmentCard from "@/components/main/AppointmentCard";
 import Announcements from "@/components/home/Announcements";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -28,56 +30,63 @@ export default function HomeScreen() {
   const [todayConsultations, setTodayConsultations] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchTodayConsultations = async () => {
-    if (!user?.id) return;
-
-    try {
-      const data = await getYourConsultations(user.id);
-      const withLecturers = await Promise.all(
-        data.map(async (c) => {
-          try {
-            const lecturer = await getLecturer(c.lecturer_id);
-            return { ...c, lecturer };
-          } catch (error) {
-            console.warn("Failed to fetch lecturer for consultation:", c.id);
-            return { ...c, lecturer: null };
-          }
-        })
-      );
-
-      const todays = withLecturers.filter((c) => {
-        const status = c.status?.toLowerCase();
-        const isValidStatus = status === "accepted" || status === "started";
-        const isScheduledToday =
-          c.scheduledDateTime?.toDate && isToday(c.scheduledDateTime.toDate());
-
-        return isValidStatus && isScheduledToday;
-      });
-
-      const latestAppointment = todays.sort(
-        (a, b) => b.scheduledDateTime.toDate() - a.scheduledDateTime.toDate()
-      )[0];
-
-      setTodayConsultations(latestAppointment ? [latestAppointment] : []);
-    } catch (error) {
-      console.error("Failed to fetch consultations", error);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchTodayConsultations();
-    setRefreshing(false);
-  };
-
   useEffect(() => {
-    fetchTodayConsultations();
+    if (!user?.id) return;
+    const q = query(
+      collection(db, "consultations"),
+      where("student_id", "==", user.id)
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      try {
+        const consultations = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const withLecturers = await Promise.all(
+          consultations.map(async (c) => {
+            try {
+              const lecturer = await getLecturer(c.lecturer_id);
+              return { ...c, lecturer };
+            } catch (error) {
+              console.warn("Failed to fetch lecturer for consultation:", c.id);
+              return { ...c, lecturer: null };
+            }
+          })
+        );
+
+        const todays = withLecturers.filter((c) => {
+          const status = c.status?.toLowerCase();
+          const isValidStatus = status === "accepted" || status === "started";
+          const isScheduledToday =
+            c.scheduledDateTime?.toDate &&
+            isToday(c.scheduledDateTime.toDate());
+
+          return isValidStatus && isScheduledToday;
+        });
+
+        const latestAppointment = todays.sort(
+          (a, b) => b.scheduledDateTime.toDate() - a.scheduledDateTime.toDate()
+        )[0];
+
+        setTodayConsultations(latestAppointment ? [latestAppointment] : []);
+      } catch (error) {
+        console.error("Error processing snapshot consultations:", error);
+      }
+    });
+
+    return () => unsubscribe();
   }, [user]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 500);
+  };
 
   const navigateToSessions = () => {
     navigation.navigate("Consultations/ConsultationHistory");
   };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <View
@@ -149,7 +158,7 @@ export default function HomeScreen() {
 
             {/* Lecturers */}
             {/* <Lecturers /> */}
-            <Announcements/>
+            <Announcements />
           </View>
         </ScrollView>
       </View>

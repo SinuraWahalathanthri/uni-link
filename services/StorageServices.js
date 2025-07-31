@@ -337,9 +337,11 @@ export const getLecturerChats = async (user) => {
           designation: lecturer.designation,
           department: lecturer.department,
           lastMessage: latestMessage.text || "📷 Image",
-          lastMessageTime: latestMessage.createdAt.seconds, 
+          lastMessageTime: latestMessage.createdAt.seconds,
           unreadCount,
-          time: new Date(latestMessage.createdAt.seconds * 1000).toLocaleTimeString([], {
+          time: new Date(
+            latestMessage.createdAt.seconds * 1000
+          ).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
             hour12: true,
