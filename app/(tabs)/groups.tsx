@@ -3,7 +3,11 @@ import AppHeader from "@/components/main/Header";
 import CommonStyles from "@/constants/CommonStyles";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/services/FirebaseConfig";
-import { Feather, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import {
+  Feather,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import {
   collection,
@@ -11,6 +15,7 @@ import {
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   orderBy,
   query,
   where,
@@ -80,74 +85,82 @@ export default function GroupsScreen() {
   const { user } = useAuth();
   const navigation = useNavigation();
 
-
-
-  const fetchMyGroups = useCallback(async () => {
+  const fetchMyGroups = useCallback(() => {
     if (!user?.id) return;
 
-    try {
-      setLoading(true);
-      const cmSnapshot = await getDocs(collection(db, "community_members"));
+    setLoading(true);
 
-      const myDocs = cmSnapshot.docs
-        .map((docSnap) => {
-          const data = docSnap.data();
-          if (
-            Array.isArray(data.members) &&
-            data.members.some((m) => m.user_id === user.id)
-          ) {
-            return {
-              communityId: data.comm_unity_id,
-              memberCount: data.members.length,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
+    const unsubscribe = onSnapshot(
+      collection(db, "community_members"),
+      async (cmSnapshot) => {
+        try {
+          const myDocs = cmSnapshot.docs
+            .map((docSnap) => {
+              const data = docSnap.data();
+              if (
+                Array.isArray(data.members) &&
+                data.members.some((m) => m.user_id === user.id)
+              ) {
+                return {
+                  communityId: data.comm_unity_id,
+                  memberCount: data.members.length,
+                };
+              }
+              return null;
+            })
+            .filter(Boolean);
 
-      const communityIds = myDocs.map((doc) => doc!.communityId);
-      const memberCountMap = Object.fromEntries(
-        myDocs.map((doc) => [doc!.communityId, doc!.memberCount])
-      );
+          const communityIds = myDocs.map((doc) => doc.communityId);
+          const memberCountMap = Object.fromEntries(
+            myDocs.map((doc) => [doc.communityId, doc.memberCount])
+          );
 
-      const [lastSeenMap, latestMsgMap] = await Promise.all([
-        fetchAllLastSeen(user.id),
-        fetchLatestMessages(communityIds),
-      ]);
+          const [lastSeenMap, latestMsgMap] = await Promise.all([
+            fetchAllLastSeen(user.id),
+            fetchLatestMessages(communityIds),
+          ]);
 
-      const communityData = await Promise.all(
-        communityIds.map(async (cid) => {
-          const snap = await getDoc(doc(db, "communities", cid));
-          if (!snap.exists()) return null;
+          const communityData = await Promise.all(
+            communityIds.map(async (cid) => {
+              const snap = await getDoc(doc(db, "communities", cid));
+              if (!snap.exists()) return null;
 
-          const lastSeen = lastSeenMap[cid];
-          const latestMessage = latestMsgMap[cid];
-          const hasUnread =
-            latestMessage && (!lastSeen || latestMessage > lastSeen);
+              const lastSeen = lastSeenMap[cid];
+              const latestMessage = latestMsgMap[cid];
+              const hasUnread =
+                latestMessage && (!lastSeen || latestMessage > lastSeen);
 
-          return {
-            id: snap.id,
-            ...snap.data(),
-            hasUnread,
-            latestMessage,
-            memberCount: memberCountMap[cid] || 0,
-          };
-        })
-      );
+              return {
+                id: snap.id,
+                ...snap.data(),
+                hasUnread,
+                latestMessage,
+                memberCount: memberCountMap[cid] || 0,
+              };
+            })
+          );
 
-      const sortedGroups = communityData.filter(Boolean).sort((a, b) => {
-        const timeA = a.latestMessage ? a.latestMessage.getTime() : 0;
-        const timeB = b.latestMessage ? b.latestMessage.getTime() : 0;
-        return timeB - timeA;
-      });
+          const sortedGroups = communityData.filter(Boolean).sort((a, b) => {
+            const timeA = a.latestMessage ? a.latestMessage.getTime() : 0;
+            const timeB = b.latestMessage ? b.latestMessage.getTime() : 0;
+            return timeB - timeA;
+          });
 
-      setMyGroups(sortedGroups);
-      setFilteredGroups(sortedGroups);
-    } catch (err) {
-      console.error("Error loading groups:", err);
-    } finally {
-      setLoading(false);
-    }
+          setMyGroups(sortedGroups);
+          setFilteredGroups(sortedGroups);
+        } catch (err) {
+          console.error("Error processing groups:", err);
+        } finally {
+          setLoading(false);
+        }
+      },
+      (error) => {
+        console.error("Error listening to groups:", error);
+        setLoading(false);
+      }
+    );
+
+    return unsubscribe;
   }, [user]);
 
   useEffect(() => {
@@ -247,16 +260,16 @@ export default function GroupsScreen() {
             </Text>
           </View>
 
-           <View
-              style={{
-                paddingVertical: 10,
-                paddingHorizontal: 10,
-                backgroundColor: "#3D83F5",
-                borderRadius: 4,
-              }}
-            >
-              <MaterialIcons name="people" color={"#ffffff"} size={24} />
-            </View>
+          <View
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 10,
+              backgroundColor: "#3D83F5",
+              borderRadius: 4,
+            }}
+          >
+            <MaterialIcons name="people" color={"#ffffff"} size={24} />
+          </View>
         </View>
 
         <View style={CommonStyles.inputContainer}>
