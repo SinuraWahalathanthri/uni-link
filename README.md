@@ -1,6 +1,49 @@
-# Welcome to your Expo app 👋
+# Welcome to Uni Link!!
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Uni Link is a **university collaboration platform** designed to connect students, lecturers, and university communities in one place. It acts as a centralized hub where users can book consultations, share resources, and stay updated with academic and extracurricular activities.  
+
+---
+
+## 🎯 Why Uni Link?  
+
+Universities often rely on multiple scattered platforms (emails, notice boards, group chats in whatsapp) to share information. This makes it difficult for students to stay updated and for lecturers to efficiently manage consultations.  
+
+**Uni Link solves this problem by:**  
+-  Providing a **single, unified platform** for communication and collaboration.  
+-  Helping students easily **book consultations/meetings** with lecturers.  
+-  Allowing lecturers to manage **appointments, resources, and announcements**.  
+-  Encouraging **student engagement** through events, communities, and peer discussions.  
+
+The goal is to make university life **simpler, smarter, and more connected**.  
+
+---
+
+## 🚀 Features  
+
+-  **User Authentication** – Secure login for students and lecturers.  
+-  **Consultation Booking** – Schedule, reschedule, and manage meetings.  
+-  **Chat System** – Real-time communication between students and lecturers.  
+-  **Announcements** – Centralized updates for classes, events, and deadlines.  
+-  **Resource Sharing** – Upload and access study materials easily.  
+-  **Community Spaces** – Peer-to-peer collaboration and event updates.  
+
+---
+
+## 🛠️ Tech Stack  
+
+- **Frontend:** React Native (Expo)  
+- **Backend:** Firebase (Authentication, Firestore Database, Cloud Storage)  
+- **UI Framework:** TailwindCSS / Styled Components
+- **Other Tools:** Google Meet API (for auto-generating meeting links)  
+
+---
+
+## ⚙️ Installation & Setup  
+
+1. **Clone the Repository**  
+   ```bash
+   https://github.com/SinuraWahalathanthri/uni-link.git
+   cd uni-link
 
 ## Get started
 
@@ -16,35 +59,4 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+ENJOY!!!
