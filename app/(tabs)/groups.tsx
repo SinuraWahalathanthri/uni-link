@@ -217,6 +217,10 @@ export default function GroupsScreen() {
     });
   };
 
+  const navigateToLostAndFound = () => {
+    (navigation as any).navigate("LostAndFound/LostAndFoundScreen");
+  };
+
   const timeAgo = (timestamp) => {
     if (!timestamp) return "No messages";
     const now = new Date();
@@ -272,6 +276,29 @@ export default function GroupsScreen() {
           </View>
         </View>
 
+        {/* Lost and Found Button */}
+        <Pressable
+          style={styles.lostFoundButton}
+          onPress={navigateToLostAndFound}
+        >
+          <View style={styles.lostFoundContent}>
+            <View style={styles.lostFoundIconContainer}>
+              <MaterialCommunityIcons
+                name="magnify-plus-outline"
+                size={24}
+                color="#ffffff"
+              />
+            </View>
+            <View style={styles.lostFoundTextContainer}>
+              <Text style={styles.lostFoundTitle}>Lost & Found</Text>
+              <Text style={styles.lostFoundSubtitle}>
+                Report lost items or claim found ones
+              </Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={24} color="#777777" />
+          </View>
+        </Pressable>
+
         <View style={CommonStyles.inputContainer}>
           <View
             style={[
@@ -321,6 +348,50 @@ export default function GroupsScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Lost and Found Button Styles
+  lostFoundButton: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 0.8,
+    borderColor: "#ececec",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  lostFoundContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  lostFoundIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#FF6B35",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  lostFoundTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  lostFoundTitle: {
+    fontFamily: "LatoBold",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#3A3A3A",
+    marginBottom: 2,
+  },
+  lostFoundSubtitle: {
+    fontFamily: "Lato",
+    fontSize: 14,
+    color: "#6B6B6B",
+  },
+
+  // Existing styles
   joinButton: {
     flexDirection: "row",
     alignItems: "center",
