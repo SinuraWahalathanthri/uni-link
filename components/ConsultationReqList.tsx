@@ -2,7 +2,19 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 
-const ConsultationReqList = () => {
+const ConsultationReqList = ({ data }) => {
+  const student = data.student;
+  const consultation = data;
+  const rawPriority = consultation.priority || "Low";
+  const capitalizedPriority =
+    rawPriority.charAt(0).toUpperCase() + rawPriority.slice(1).toLowerCase();
+
+  const priorityColor = {
+    High: "#ef4444",
+    Medium: "#f59e0b",
+    Low: "#10b981",
+  }[capitalizedPriority as "High" | "Medium" | "Low"];
+
   return (
     <View
       style={{
@@ -22,7 +34,7 @@ const ConsultationReqList = () => {
         }}
       >
         <View style={{ flex: 1, flexWrap: "wrap" }}>
-          <View style={{ flexDirection: "row" }}>
+          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             <View
               style={{
                 paddingVertical: 10,
@@ -33,11 +45,11 @@ const ConsultationReqList = () => {
             >
               <MaterialIcons name="person" color={"#0F4996"} size={24} />
             </View>
-            <View style={{ marginLeft: 12 }}>
+            <View style={{ marginLeft: 12, flex: 1 }}>
               <Text
                 style={{ fontFamily: "LatoBold", fontSize: 16, color: "#000" }}
               >
-                Johm Smith
+                {student.name}
               </Text>
               <Text
                 style={{
@@ -45,13 +57,16 @@ const ConsultationReqList = () => {
                   fontSize: 13,
                   color: "#6D6D6E",
                   marginTop: 5,
+                  textOverflow: "ellipsis",
+                  overflow: "hidden",
+                  maxWidth: "90%",
                 }}
               >
-                STU2024001 • CS201
+                {student.institutional_id} • {student.degree}
               </Text>
             </View>
           </View>
-          <View style={{ marginTop: 10, flexWrap: "wrap", flex: 1 }}>
+          <View style={{ marginTop: 10, flex: 1 }}>
             <Text
               style={{
                 fontFamily: "LatoBold",
@@ -63,7 +78,7 @@ const ConsultationReqList = () => {
                 lineHeight: 20,
               }}
             >
-              Database Systems - Lecture Series PDF
+              {consultation.topic}
             </Text>
             <Text
               style={{
@@ -77,8 +92,7 @@ const ConsultationReqList = () => {
                 lineHeight: 20,
               }}
             >
-              Comprehensive introduction to database systems, covering basic
-              concepts and terminology
+              {consultation.description}
             </Text>
           </View>
         </View>
@@ -86,7 +100,7 @@ const ConsultationReqList = () => {
           <View
             style={{
               flexDirection: "row",
-              backgroundColor: "#ef4444",
+              backgroundColor: priorityColor,
               padding: 3,
               borderRadius: 100,
               paddingHorizontal: 8,
@@ -94,7 +108,7 @@ const ConsultationReqList = () => {
               gap: 2,
             }}
           >
-            <MaterialIcons name="info-outline" size={18} color={"#ffffff"} />
+            <MaterialIcons name="info-outline" size={18} color="#fff" />
             <Text
               style={{
                 fontFamily: "LatoBold",
@@ -103,7 +117,7 @@ const ConsultationReqList = () => {
                 textTransform: "uppercase",
               }}
             >
-              High
+              {capitalizedPriority}
             </Text>
           </View>
           <View
@@ -125,22 +139,25 @@ const ConsultationReqList = () => {
                 textTransform: "uppercase",
               }}
             >
-              Pending
+              {consultation.status}
             </Text>
           </View>
         </View>
       </View>
 
       <View style={{ marginTop: 10 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <MaterialIcons name="calendar-today" size={20} color={"#6D6D6E"} />
           <Text style={{ fontFamily: "Lato", color: "#6D6D6E", fontSize: 14 }}>
-            Requested: Today, 2:00 PM
+            Requested:{" "}
+            {consultation.preferredDate
+              ? consultation.preferredDate
+              : "Not specified"}
           </Text>
         </View>
 
-        <View style={{ flexDirection: "row",  }}>
-          <View style={{ width:"50%", marginTop: 10, paddingRight:8 }}>
+        <View style={{ flexDirection: "row", marginTop: 10 }}>
+          {/* <View style={{ width:"50%", marginTop: 10, paddingRight:8 }}>
             <Text
               style={{
                 fontFamily: "LatoBold",
@@ -204,7 +221,7 @@ const ConsultationReqList = () => {
                 </Text>
               </View>
             </View>
-          </View>
+          </View> */}
           <View
             style={{
               marginLeft: "auto",

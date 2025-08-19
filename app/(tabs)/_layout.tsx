@@ -69,7 +69,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="chat" size={28} color={color} />
           ),
-          tabBarBadge: 3,
           tabBarBadgeStyle: {
             backgroundColor: 'red',
             color: 'white',

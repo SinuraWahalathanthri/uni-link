@@ -1,146 +1,124 @@
+import React, { useEffect, useState } from "react";
 import {
-  Image,
-  Platform,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
+  StyleSheet,
 } from "react-native";
-import React, { useState } from "react";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { Stack } from "expo-router";
-import CommonStyles from "@/constants/CommonStyles";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import ConsultationReqList from "@/components/ConsultationReqList";
+import CommonStyles from "@/constants/CommonStyles";
+
+const db = getFirestore();
+
+type ConsultationRequestType = {
+  id: string;
+  [key: string]: any;
+};
 
 const ConsultationRequest = () => {
+  const [requests, setRequests] = useState<ConsultationRequestType[]>([]);
   const [emailFocused, setEmailFocused] = useState(false);
+  const { lecturerData } = useLocalSearchParams();
+  const lecturer =
+    lecturerData
+      ? JSON.parse(Array.isArray(lecturerData) ? lecturerData[0] : lecturerData)
+      : null;
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      if (!lecturer?.docId) {
+        console.warn("Lecturer data missing or invalid");
+        return;
+      }
+
+      try {
+        const q = query(
+          collection(db, "consultations"),
+          where("lecturer_id", "==", lecturer.docId)
+        );
+
+        const snapshot = await getDocs(q);
+        const allRequests = [];
+
+        for (const docSnap of snapshot.docs) {
+          const consult = docSnap.data();
+          const studentRef = doc(db, "students", consult.student_id);
+          const studentSnap = await getDoc(studentRef);
+
+          if (studentSnap.exists()) {
+            allRequests.push({
+              id: docSnap.id,
+              ...consult,
+              student: studentSnap.data(),
+            });
+          }
+        }
+
+        setRequests(allRequests);
+      } catch (err) {
+        console.error("Error fetching consultation requests:", err);
+      }
+    };
+
+    fetchRequests();
+  }, [lecturer]);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
-      <Stack.Screen
-        options={{
-          title: "",
-          headerTitleStyle: { color: "#ffffff" },
-          headerShadowVisible: false,
-        }}
-      />
-      <View style={[styles.container]}>
+    <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ title: "", headerShadowVisible: false }} />
+      <View style={styles.container}>
         {/* Header */}
-        <View>
-          {/* Title and subtitle */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <View>
-              <Text style={styles.title}>Consultation Requests</Text>
-              <Text style={styles.subTitle}>
-                View All Consultation Requests from Students
-              </Text>
-            </View>
-            <View
-              style={{
-                paddingVertical: 10,
-                paddingHorizontal: 10,
-                backgroundColor: "#3D83F5",
-                borderRadius: 4,
-              }}
-            >
-              <MaterialIcons name="menu-book" color={"#ffffff"} size={24} />
-            </View>
-          </View>
-
-          <View style={CommonStyles.inputContainer}>
-            <View
-              style={[
-                CommonStyles.searchInputWrapper,
-                emailFocused && CommonStyles.focusedInput,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="magnify"
-                size={20}
-                color={"#777777"}
-              />
-              <TextInput
-                style={CommonStyles.textInput}
-                placeholder="Search requests by student name or ID"
-                keyboardType="email-address"
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-              />
-            </View>
-          </View>
-
+        <View style={styles.header}>
           <View>
-            <ScrollView
-              horizontal
-              contentContainerStyle={{
-                flexDirection: "row",
-                gap: 8,
-                marginTop: 10,
-                alignItems: "center",
-              }}
-              showsHorizontalScrollIndicator={false}
-            >
-              <View
-                style={{
-                  paddingVertical: 2,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#3D83F5",
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#ffffff",
-                  }}
-                >
-                  All (4)
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  paddingVertical: 2,
-                  paddingHorizontal: 24,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 100,
-                  borderWidth: 1,
-                  borderColor: "#DADADA",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 13,
-                    lineHeight: 28,
-                    color: "#707275",
-                  }}
-                >
-                  Pending
-                </Text>
-              </View>
-            </ScrollView>
+            <Text style={styles.title}>Consultation Requests</Text>
+            <Text style={styles.subTitle}>
+              View All Consultation Requests from Students
+            </Text>
+          </View>
+          <View style={styles.iconContainer}>
+            <MaterialIcons name="menu-book" color="#ffffff" size={24} />
           </View>
         </View>
 
-        {/* Resources List */}
+        {/* Search Input */}
+        <View style={CommonStyles.inputContainer}>
+          <View
+            style={[
+              CommonStyles.searchInputWrapper,
+              emailFocused && CommonStyles.focusedInput,
+            ]}
+          >
+            <MaterialCommunityIcons name="magnify" size={20} color="#777" />
+            <TextInput
+              style={CommonStyles.textInput}
+              placeholder="Search requests by student name or ID"
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
+            />
+          </View>
+        </View>
+
+        {/* Requests List */}
         <ScrollView
-          style={{ flex: 1, marginTop: 20 }}
-          showsVerticalScrollIndicator={false}
+          style={styles.scrollView}
           contentContainerStyle={{ paddingBottom: 20, gap: 16 }}
         >
-          <ConsultationReqList />
-          <ConsultationReqList />
-          <ConsultationReqList />
+          {requests.map((req) => (
+            <ConsultationReqList key={req.id} data={req} />
+          ))}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -150,27 +128,25 @@ const ConsultationRequest = () => {
 export default ConsultationRequest;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "white",
+  },
   container: {
     flex: 1,
     backgroundColor: "white",
     paddingHorizontal: 16,
   },
-  image: {
-    width: 148,
-    height: 65,
-    alignSelf: "center",
-    marginTop: 14,
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    alignSelf: "center",
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
     fontFamily: "LatoBold",
     fontSize: 24,
-    lineHeight: 29,
     fontWeight: "600",
+    lineHeight: 29,
   },
   subTitle: {
     marginTop: 6,
@@ -179,36 +155,12 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: "#6B6B6B",
   },
-  inputContainer: {
-    marginTop: 8,
+  iconContainer: {
+    padding: 10,
+    backgroundColor: "#3D83F5",
+    borderRadius: 4,
   },
-  label: {
-    fontFamily: "Lato",
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#505050",
-  },
-  emailInputWrapper: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#CFCFCF",
-    borderRadius: 100,
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  textInput: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "Lato",
-    marginLeft: 8,
-    paddingVertical: 0,
-    flex: 1,
-  },
-  focusedInput: {
-    borderColor: "#3D83F5",
-    borderWidth: 1,
+  scrollView: {
+    marginTop: 20,
   },
 });

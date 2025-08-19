@@ -8,15 +8,76 @@ import {
   Text,
   TextInput,
   View,
+  Alert,
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
 
 const LoginScreen = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    if (!email) {
+      Alert.alert("Error", "Please enter your university email.");
+      return;
+    }
+
+    try {
+      const q = query(collection(db, "lecturers"), where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        Alert.alert("Error", "Lecturer not found.");
+        return;
+      }
+
+      const doc = querySnapshot.docs[0];
+      const lecturerData = doc.data();
+
+      // ✅ Add docId to the data
+      const fullLecturerData = { ...lecturerData, docId: doc.id };
+
+      if (lecturerData.password) {
+        // Password-based login
+        if (lecturerData.password === password) {
+          Alert.alert("Success", "Login successful.");
+          router.replace({
+            pathname: "/(tabs)", // 👈 adjust this route as needed
+            params: { lecturer: JSON.stringify(fullLecturerData) },
+          });
+        } else {
+          Alert.alert("Error", "Incorrect password.");
+        }
+      } else {
+        // OTP-based login
+        router.push({
+          pathname: "/otpScreen",
+          params: {
+            email: lecturerData.email,
+            lecturerID: lecturerData.lecturer_id,
+            expectedOTP: lecturerData.OTP,
+          },
+        });
+      }
+    } catch (err) {
+      Alert.alert("Error", "Login failed. Try again.");
+      console.error("Login error:", err);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -53,10 +114,12 @@ const LoginScreen = () => {
               />
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter your email or student ID"
+                placeholder="Enter your email"
                 keyboardType="email-address"
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
+                value={email}
+                onChangeText={setEmail}
               />
             </View>
           </View>
@@ -81,17 +144,17 @@ const LoginScreen = () => {
                 secureTextEntry
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
+                value={password}
+                onChangeText={setPassword}
               />
             </View>
           </View>
 
           {/* Login Button */}
           <View style={styles.loginSection}>
-            <Link href={"/(tabs)"} asChild>
-              <Pressable style={styles.loginButton}>
-                <Text style={styles.loginButtonText}>Login</Text>
-              </Pressable>
-            </Link>
+            <Pressable style={styles.loginButton} onPress={handleLogin}>
+              <Text style={styles.loginButtonText}>Login</Text>
+            </Pressable>
 
             <Pressable onPress={() => console.log("Forgot Password")}>
               <Text style={styles.forgotText}>Forgot Password?</Text>

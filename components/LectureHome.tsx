@@ -9,41 +9,19 @@ import {
   Text,
   View,
 } from "react-native";
-
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { Link, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  query,
+  collection,
+  getDocs,
+  orderBy,
+  limit,
+  where,
+} from "firebase/firestore";
+import { db } from "@/services/FirebaseConfig";
 import AppHeader from "@/components/main/Header";
-import AppointmentCard from "@/components/main/AppointmentCard";
-import { Link } from "expo-router";
-
-const eventData = [
-  {
-    id: "1",
-    date: "Sat, April 22",
-    title: "Hacktivate 2000",
-    image: require("../assets/images/hackthonImage.png"),
-  },
-  {
-    id: "2",
-    date: "Sun, May 14",
-    title: "CodeX Summit",
-    image: require("../assets/images/hackthonImage.png"),
-  },
-];
-
-const lectureData = [
-  {
-    id: "1",
-    lecutureName: "Prof. Ajith Fernando",
-    title: "Senior Lecture",
-    image: require("../assets/images/lectureImage.png"),
-  },
-  {
-    id: "2",
-    lecutureName: "Prof. Ajith Fernando",
-    title: "Senior Lecture",
-    image: require("../assets/images/lectureImage.png"),
-  },
-];
 
 const EventCard = ({ item }) => (
   <Pressable style={styles.card}>
@@ -59,18 +37,104 @@ const EventCard = ({ item }) => (
   </Pressable>
 );
 
-const LectureCard = ({ item }) => (
-  <Pressable style={styles.lectureCard}>
-    <Image source={item.image} style={styles.lectureImage} />
-    <Pressable style={styles.lectureOverlay} />
-    <View style={styles.lectureTextContainer}>
-      <Text style={styles.lectureNameText}>{item.lecutureName}</Text>
-      <Text style={styles.lectureTitleText}>{item.title}</Text>
-    </View>
-  </Pressable>
-);
-
 export default function LectureHome() {
+  const { lecturer } = useLocalSearchParams();
+  const [lecturerData, setLecturerData] = useState(null);
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    if (lecturer) {
+      setLecturerData(JSON.parse(lecturer));
+    }
+
+    const fetchEvents = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "events"));
+        const eventList = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          eventList.push({
+            id: doc.id,
+            title: data.title,
+            date: formatDate(data.start_time.toDate()),
+            image: require("../assets/images/hackthonImage.png"),
+          });
+        });
+
+        setEvents(eventList);
+      } catch (err) {
+        console.error("Failed to fetch events:", err);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const formatDate = (dateObj) => {
+    const options = { weekday: "short", month: "long", day: "numeric" };
+    return dateObj.toLocaleDateString("en-US", options);
+  };
+
+  const [consultations, setConsultations] = useState([]);
+
+  useEffect(() => {
+    const fetchConsultations = async () => {
+      try {
+        if (!lecturer) return;
+
+        const lectureDoc = JSON.parse(lecturer);
+        console.log("Lecture doc from params:", lectureDoc);
+
+        const lectureDocId = lectureDoc.docId || lectureDoc.lecturer_id; // fallback if docId missing
+
+        if (!lectureDocId) {
+          console.error("❌ No valid lecturer ID found.");
+          return;
+        }
+
+        const q = query(
+          collection(db, "consultations"),
+          where("lecturer_id", "==", lectureDocId),
+          orderBy("createdAt", "desc"),
+          limit(3)
+        );
+
+        const snapshot = await getDocs(q);
+        const recentConsultations = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setConsultations(recentConsultations);
+      } catch (error) {
+        console.error("🔥 Error fetching consultations:", error);
+      }
+    };
+
+    fetchConsultations();
+  }, [lecturer]);
+
+  function timeSince(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    const intervals = [
+      { label: "year", seconds: 31536000 },
+      { label: "month", seconds: 2592000 },
+      { label: "day", seconds: 86400 },
+      { label: "hour", seconds: 3600 },
+      { label: "minute", seconds: 60 },
+      { label: "second", seconds: 1 },
+    ];
+
+    for (const interval of intervals) {
+      const count = Math.floor(seconds / interval.seconds);
+      if (count > 0) {
+        return `${count} ${interval.label}${count !== 1 ? "s" : ""}`;
+      }
+    }
+    return "just now";
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Blue Header Section */}
@@ -81,11 +145,13 @@ export default function LectureHome() {
             { paddingTop: Platform.OS === "ios" ? 0 : 36 },
           ]}
         >
-          <AppHeader type={"lecture"} />
-
-          {/* Title and subtitle in blue section */}
+          <AppHeader type="lecture" />
           <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Good Evening, Dr.Kamal!</Text>
+            <Text style={styles.headerTitle}>
+              {lecturerData
+                ? `Good Evening, ${lecturerData.name}`
+                : "Good Evening!"}
+            </Text>
             <Text style={styles.headerSubTitle}>
               Every day is a new beginning.
             </Text>
@@ -104,10 +170,9 @@ export default function LectureHome() {
             <Text style={styles.sectionTitle}>Upcoming Events</Text>
             <Text style={styles.viewAllText}>View All</Text>
           </View>
-
           <View style={styles.eventsContainer}>
             <FlatList
-              data={eventData}
+              data={events}
               horizontal
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => <EventCard item={item} />}
@@ -121,11 +186,8 @@ export default function LectureHome() {
           <View style={[styles.sectionHeader, { marginTop: 32 }]}>
             <Text style={styles.sectionTitle}>Quick Access</Text>
           </View>
-
           <View style={styles.quickAccessContainer}>
-            {/* Row 1 */}
             <View style={styles.quickAccessRow}>
-              {/* Chat with Students */}
               <Pressable style={styles.quickAccessCard}>
                 <View style={styles.quickAccessTop}>
                   <View
@@ -147,7 +209,6 @@ export default function LectureHome() {
                 <Text style={styles.quickAccessText}>Chat with Students</Text>
               </Pressable>
 
-              {/* Pending Consultations */}
               <Pressable style={styles.quickAccessCard}>
                 <View style={styles.quickAccessTop}>
                   <View
@@ -172,9 +233,7 @@ export default function LectureHome() {
               </Pressable>
             </View>
 
-            {/* Row 2 */}
             <View style={styles.quickAccessRow}>
-              {/* Get Help */}
               <Pressable style={styles.quickAccessCard}>
                 <View style={styles.quickAccessTop}>
                   <View
@@ -193,8 +252,7 @@ export default function LectureHome() {
                 <Text style={styles.quickAccessText}>Get Help</Text>
               </Pressable>
 
-              {/* Upload Resources */}
-              <Link href={"/resources"} asChild>
+              <Link href="/resources" asChild>
                 <Pressable style={styles.quickAccessCard}>
                   <View style={styles.quickAccessTop}>
                     <View
@@ -217,109 +275,65 @@ export default function LectureHome() {
           </View>
 
           {/* Recent Consultation Requests */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 24,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: "LatoBold",
-                fontSize: 18,
-                lineHeight: 20,
-                color: "#000000",
-              }}
-            >
+          <View style={styles.consultationHeader}>
+            <Text style={styles.consultationTitle}>
               Recent Consultation Requests
             </Text>
-            <Link href={"/consultationRequest"} asChild>
+            <Link
+              href={{
+                pathname: "/(app)/ConsultationRequest",
+                params: { lecturerData: JSON.stringify(lecturerData) },
+              }}
+              asChild
+            >
               <Pressable>
-                <Text
-                  style={{
-                    fontFamily: "Lato",
-                    fontSize: 15,
-                    lineHeight: 19,
-                    color: "#1A3C7C",
-                  }}
-                >
-                  View all
-                </Text>
+                <Text style={styles.viewAllText}>View all</Text>
               </Pressable>
             </Link>
           </View>
-
           <View style={styles.consultationContainer}>
-            <View
-              style={{
-                paddingVertical: 16,
-                paddingHorizontal: 16,
-                borderWidth: 1,
-                borderColor: "#D7D7D7",
-                borderRadius: 12,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <View style={{ flexDirection: "row" }}>
-                  <MaterialIcons
-                    name="info-outline"
-                    size={20}
-                    color="#f59e0b"
-                  />
-                  <View>
-                    <Text
+            {consultations.length === 0 ? (
+              <Text style={{ color: "#6b7280" }}>
+                No recent consultations found.
+              </Text>
+            ) : (
+              consultations.map((item) => (
+                <View key={item.id} style={styles.consultationCard}>
+                  <View style={styles.consultationTop}>
+                    <View
                       style={{
-                        marginLeft: 8,
-                        fontFamily: "LatoBold",
-                        fontSize: 16,
-                        lineHeight: 19,
-                        color: "#000000",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 6,
                       }}
                     >
-                      Emily Perera (STU00902)
-                    </Text>
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        fontFamily: "LatoBold",
-                        fontSize: 14,
-                        lineHeight: 19,
-                        color: "#1A1C87",
-                      }}
-                    >
-                      Final Project Discussion
+                      <MaterialIcons
+                        name="info-outline"
+                        size={20}
+                        color="#f59e0b"
+                      />
+                      <View>
+                        <Text style={styles.consultationName}>
+                          {item.topic || "No Topic"}
+                        </Text>
+                        <Text style={styles.consultationTopic}>
+                          {item.student_id || "Student ID not available"}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.consultationTime}>
+                      {timeSince(item.createdAt?.toDate?.() || new Date())} ago
                     </Text>
                   </View>
+                  <Text style={styles.consultationTitleText}>
+                    {item.topic || "Untitled"}
+                  </Text>
+                  <Text style={styles.consultationDesc}>
+                    {item.description || "No description provided."}
+                  </Text>
                 </View>
-                <Text
-                  style={{ fontFamily: "Lato", fontSize: 14, color: "#1A1C87" }}
-                >
-                  5 hours
-                </Text>
-              </View>
-
-              <Text
-                style={{
-                  fontFamily: "LatoBold",
-                  fontSize: 16,
-                  color: "#1e40af",
-                  marginTop: 5,
-                }}
-              >
-                Final Project Discussion
-              </Text>
-              <Text
-                style={{ fontFamily: "Lato", color: "#475569", marginTop: 2 }}
-              >
-                Would like to discuss my final project?
-              </Text>
-            </View>
+              ))
+            )}
           </View>
         </ScrollView>
       </View>
@@ -454,6 +468,7 @@ const styles = StyleSheet.create({
   // Consultation
   consultationContainer: {
     marginTop: 16,
+    gap:10
   },
 
   // Event Card Styles (unchanged)
@@ -537,5 +552,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 19,
     marginTop: 5,
+  },
+
+  consultationHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 24,
+    alignItems: "center",
+  },
+  consultationTitle: {
+    fontFamily: "LatoBold",
+    fontSize: 18,
+    color: "#000000",
+  },
+  consultationCard: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#D7D7D7",
+    borderRadius: 12,
+  },
+  consultationTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  consultationName: {
+    marginLeft: 8,
+    fontFamily: "LatoBold",
+    fontSize: 16,
+    color: "#000000",
+  },
+  consultationTopic: {
+    marginLeft: 8,
+    fontFamily: "LatoBold",
+    fontSize: 14,
+    color: "#1A1C87",
+  },
+  consultationTime: {
+    fontFamily: "Lato",
+    fontSize: 14,
+    color: "#1A1C87",
+  },
+  consultationTitleText: {
+    fontFamily: "LatoBold",
+    fontSize: 16,
+    color: "#1e40af",
+    marginTop: 5,
+  },
+  consultationDesc: {
+    fontFamily: "Lato",
+    color: "#475569",
+    marginTop: 2,
   },
 });
