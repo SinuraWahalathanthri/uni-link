@@ -1,6 +1,7 @@
 # Welcome to Uni Link!!
 
 Uni Link is a **university collaboration platform** designed to connect students, lecturers, and university communities in one place. It acts as a centralized hub where users can book consultations, share resources, and stay updated with academic and extracurricular activities.  
+<img width="1248" height="697" alt="Screenshot 2025-11-29 115514" src="https://github.com/user-attachments/assets/99f9aad7-36dc-494d-8d4c-504ca45a6e5b" />
 
 ---
 
